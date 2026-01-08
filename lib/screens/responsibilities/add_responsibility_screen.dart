@@ -19,18 +19,24 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
   String frequencia = "Semanal";
   int esforco = 1; // 1 = Leve, 2 = Médio, 3 = Pesado
 
-  // LISTAS DE OPÇÕES (Mocks)
+  // MOCKS (Futuramente virão do banco de dados)
   final List<String> roles = ["Mãe", "Pai", "Ambos", "Filhos"];
   final List<String> frequencias = ["Diário", "Semanal", "Mensal", "Eventual"];
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA), // Fundo neutro e calmo
+      backgroundColor: theme.colorScheme.background,
       appBar: AppBar(
-        title: const Text("Nova Responsabilidade"),
+        title: Text("Nova Responsabilidade", style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.close, color: theme.colorScheme.onSurface),
+          onPressed: () => context.pop(),
+        ),
       ),
       body: Form(
         key: _formKey,
@@ -38,13 +44,15 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
           padding: const EdgeInsets.all(24),
           children: [
             // 1. O QUE É?
-            const Text("O que precisa ser gerenciado?", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 10),
+            Text("O que precisa ser gerenciado?", 
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
             TextFormField(
               decoration: InputDecoration(
                 hintText: "Ex: Agendar Pediatra, Pagar Luz...",
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: theme.colorScheme.surface,
+                prefixIcon: Icon(Icons.edit_note, color: theme.colorScheme.primary),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 contentPadding: const EdgeInsets.all(16),
               ),
@@ -52,30 +60,46 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
               onChanged: (value) => title = value,
             ),
             
-            const SizedBox(height: 30),
+            const SizedBox(height: 32),
 
             // 2. A TRINDADE (Mental Load)
-            const Text("Definição de Papéis (A Mágica do NEXO)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF2C3E50))),
-            const SizedBox(height: 10),
+            Row(
+              children: [
+                Icon(Icons.psychology, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text("Definição de Papéis", 
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold, 
+                    color: theme.colorScheme.onSurface
+                  )),
+              ],
+            ),
+            const SizedBox(height: 12),
             
-            // Card agrupando os papéis para ficar visualmente limpo
+            // Card agrupando os papéis
             Container(
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface, 
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))
+                ]
+              ),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  _buildDropdownRow("🧠 Quem Lembra?", "Carga Mental", quemLembra, (val) => setState(() => quemLembra = val!)),
-                  const Divider(),
-                  _buildDropdownRow("⚖️ Quem Decide?", "Autoridade", quemDecide, (val) => setState(() => quemDecide = val!)),
-                  const Divider(),
-                  _buildDropdownRow("💪 Quem Executa?", "Mão na Massa", quemExecuta, (val) => setState(() => quemExecuta = val!)),
+                  _buildDropdownRow(theme, "🧠 Quem Lembra?", "Carga Mental", quemLembra, (val) => setState(() => quemLembra = val!)),
+                  Divider(color: Colors.grey.shade100, height: 24),
+                  _buildDropdownRow(theme, "⚖️ Quem Decide?", "Autoridade", quemDecide, (val) => setState(() => quemDecide = val!)),
+                  Divider(color: Colors.grey.shade100, height: 24),
+                  _buildDropdownRow(theme, "💪 Quem Executa?", "Mão na Massa", quemExecuta, (val) => setState(() => quemExecuta = val!)),
                 ],
               ),
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 32),
 
-            // 3. DETALHES TÉCNICOS (Frequência e Esforço)
+            // 3. DETALHES TÉCNICOS
             Row(
               children: [
                 Expanded(
@@ -86,8 +110,12 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
                         value: frequencia,
-                        decoration: InputDecoration(filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
-                        items: frequencias.map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
+                        decoration: InputDecoration(
+                          filled: true, 
+                          fillColor: theme.colorScheme.surface, 
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)
+                        ),
+                        items: frequencias.map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontSize: 14)))).toList(),
                         onChanged: (val) => setState(() => frequencia = val!),
                       ),
                     ],
@@ -98,11 +126,15 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Nível de Esforço", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text("Esforço", style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<int>(
                         value: esforco,
-                        decoration: InputDecoration(filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
+                        decoration: InputDecoration(
+                          filled: true, 
+                          fillColor: theme.colorScheme.surface, 
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)
+                        ),
                         items: const [
                           DropdownMenuItem(value: 1, child: Text("🟢 Leve")),
                           DropdownMenuItem(value: 2, child: Text("🟡 Médio")),
@@ -121,14 +153,14 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
             // 4. BOTÃO DE AÇÃO
             SizedBox(
               width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2C3E50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+              height: 56,
+              child: FilledButton(
                 onPressed: _saveTask,
-                child: const Text("CRIAR RESPONSABILIDADE", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                style: FilledButton.styleFrom(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text("CRIAR RESPONSABILIDADE", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
           ],
@@ -137,44 +169,45 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
     );
   }
 
-  // Widget auxiliar para deixar o código limpo
-  Widget _buildDropdownRow(String label, String sublabel, String currentValue, ValueChanged<String?> onChanged) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-              Text(sublabel, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            ],
+  // Widget auxiliar melhorado
+  Widget _buildDropdownRow(ThemeData theme, String label, String sublabel, String currentValue, ValueChanged<String?> onChanged) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            Text(sublabel, style: TextStyle(fontSize: 12, color: theme.colorScheme.outline)),
+          ],
+        ),
+        SizedBox(
+          width: 130,
+          child: DropdownButtonFormField<String>(
+            value: currentValue,
+            icon: Icon(Icons.arrow_drop_down, color: theme.colorScheme.primary),
+            decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.zero),
+            items: roles.map((role) {
+              return DropdownMenuItem(
+                value: role, 
+                child: Text(role, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary))
+              );
+            }).toList(),
+            onChanged: onChanged,
+            alignment: Alignment.centerRight,
           ),
-          SizedBox(
-            width: 120,
-            child: DropdownButtonFormField<String>(
-              value: currentValue,
-              decoration: const InputDecoration(border: InputBorder.none),
-              items: roles.map((role) {
-                return DropdownMenuItem(value: role, child: Text(role, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2C3E50))));
-              }).toList(),
-              onChanged: onChanged,
-              alignment: Alignment.centerRight,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   void _saveTask() {
     if (_formKey.currentState!.validate()) {
-      // Simulação de salvamento
+      // Simulação
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Criado: $title ($frequencia)"),
-          backgroundColor: Colors.green,
+          content: Text("✨ Responsabilidade criada! ($quemLembra lembra, $quemExecuta faz)"),
+          backgroundColor: Theme.of(context).colorScheme.primary,
           behavior: SnackBarBehavior.floating,
         ),
       );

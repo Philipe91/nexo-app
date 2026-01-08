@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart'; // <--- Adicionamos esse import para poder navegar
 
 class CreateFamilyScreen extends StatefulWidget {
-  const CreateFamilyScreen({super.key}); // Se der erro, use: {Key? key} : super(key: key);
+  const CreateFamilyScreen({super.key});
 
   @override
   State<CreateFamilyScreen> createState() => _CreateFamilyScreenState();
@@ -40,13 +41,19 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
               ),
             ),
             const Spacer(),
+            
+            // --- AQUI ESTÁ A MUDANÇA DO PASSO 3 ---
             FilledButton(
               onPressed: () {
-                // Aqui vamos salvar e ir para a próxima tela depois
-                print("Nome da família: ${_nameController.text}");
+                // Só navega se o campo não estiver vazio
+                if (_nameController.text.isNotEmpty) {
+                  // Manda o texto digitado para a próxima tela
+                  context.push('/add-members', extra: _nameController.text);
+                }
               },
               child: const Text('Continuar'),
             ),
+            // --------------------------------------
           ],
         ),
       ),

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 // Importa as telas que criamos para que o roteador saiba o que mostrar.
 import 'screens/onboarding/create_family_screen.dart'; // Import que você já tinha adicionado
+import 'screens/onboarding/add_members_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/responsibilities/responsibilities_screen.dart';
@@ -24,6 +25,19 @@ final router = GoRouter(
       path: '/', // O caminho na URL
       builder: (context, state) => const OnboardingScreen(),
     ),
+
+// Rota de Adicionar Membros
+    GoRoute(
+      path: '/add-members',
+      builder: (context, state) {
+        // Pega o objeto (nome) passado pela tela anterior
+        final name = state.extra as String? ?? 'Sua Família';
+        return AddMembersScreen(familyName: name);
+      },
+    ),
+
+
+
 
     // --- NOVA ROTA ADICIONADA AQUI ---
     // Rota para criar a família (próximo passo do onboarding)
