@@ -1,13 +1,55 @@
+// --- SEÇÃO DE IMPORTS ---
+// Importa o pacote oficial do GoRouter, necessário para o sistema de rotas funcionar.
 import 'package:go_router/go_router.dart';
+
+// Importa as telas que criamos para que o roteador saiba o que mostrar.
+import 'screens/onboarding/create_family_screen.dart'; // Import que você já tinha adicionado
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/responsibilities/responsibilities_screen.dart';
+import 'screens/responsibilities/add_responsibility_screen.dart'; 
 
-final appRouter = GoRouter(
+// Definimos a variável 'router' (pública) que será usada no main.dart.
+// Ela guarda toda a configuração de navegação do app.
+final router = GoRouter(
+  
+  // initialLocation: Define qual tela abre assim que o app inicia.
   initialLocation: '/',
+
+  // routes: É uma lista [] onde definimos cada caminho possível dentro do app.
   routes: [
-    GoRoute(path: '/', builder: (context, state) => const OnboardingScreen()),
-    GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
-    GoRoute(path: '/responsibilities', builder: (context, state) => const ResponsibilitiesScreen()),
-  ],
-);
+    
+    // Rota Raiz (Splash ou Onboarding)
+    GoRoute(
+      path: '/', // O caminho na URL
+      builder: (context, state) => const OnboardingScreen(),
+    ),
+
+    // --- NOVA ROTA ADICIONADA AQUI ---
+    // Rota para criar a família (próximo passo do onboarding)
+    GoRoute(
+      path: '/create-family',
+      builder: (context, state) => const CreateFamilyScreen(),
+    ),
+    // ---------------------------------
+
+    // Rota da Home Principal
+    GoRoute(
+      path: '/home',
+      builder: (context, state) => const HomeScreen(),
+    ),
+
+    // Rota da Lista de Responsabilidades
+    GoRoute(
+      path: '/responsibilities',
+      builder: (context, state) => const ResponsibilitiesScreen(),
+    ),
+
+    // Rota para a tela de Adicionar Nova Responsabilidade
+    GoRoute(
+      path: '/responsibilities/add', 
+      builder: (context, state) => const AddResponsibilityScreen(),
+    ),
+    
+  ], // Fim da lista de rotas
+); // Fim da configuração do GoRouter
