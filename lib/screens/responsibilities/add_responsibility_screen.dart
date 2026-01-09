@@ -14,10 +14,8 @@ class AddResponsibilityScreen extends StatefulWidget {
 class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // DADOS DO FORMULÁRIO
   String title = "";
   
-  // Valores iniciais (Começam vazios ou nulos)
   String? quemLembra;
   String? quemDecide;
   String? quemExecuta;
@@ -30,14 +28,15 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
   @override
   void initState() {
     super.initState();
-    // Inicializa os campos com os dados reais do Banco de Membros
     WidgetsBinding.instance.addPostFrameCallback((_) {
+       // Acesso aos membros via Provider
        final members = context.read<MemberProvider>().members;
        if (members.isNotEmpty) {
          setState(() {
-           quemLembra = members.first;
-           quemDecide = members.length > 1 ? members[1] : members.first;
-           quemExecuta = members.first;
+           // Inicializa com os nomes
+           quemLembra = members.first.name;
+           quemDecide = members.length > 1 ? members[1].name : members.first.name;
+           quemExecuta = members.first.name;
          });
        }
     });
@@ -47,22 +46,21 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    // --- AQUI ESTÁ O SEGREDO ---
-    // "Escutamos" o MemberProvider para pegar a lista real (Mãe, Pai, Tio...)
-    final members = context.watch<MemberProvider>().members;
+    // Obtém a lista de membros do Provider
+    final memberObjects = context.watch<MemberProvider>().members;
+    // Transforma Objetos em Lista de Nomes (Strings) para o Dropdown
+    final memberNames = memberObjects.map((m) => m.name).toList();
 
-    // Se a lista estiver vazia, avisa o usuário
-    if (members.isEmpty) {
+    if (memberNames.isEmpty) {
         return Scaffold(
             appBar: AppBar(),
             body: const Center(child: Text("Ops! Adicione membros na tela 'Membros' primeiro."))
         );
     }
     
-    // Proteção: Se a variável estiver nula, pega o primeiro membro da lista
-    quemLembra ??= members.first;
-    quemDecide ??= members.first;
-    quemExecuta ??= members.first;
+    quemLembra ??= memberNames.first;
+    quemDecide ??= memberNames.first;
+    quemExecuta ??= memberNames.first;
 
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
@@ -80,7 +78,6 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            // 1. O QUE É?
             Text("O que precisa ser gerenciado?", 
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
@@ -99,7 +96,6 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
             
             const SizedBox(height: 32),
 
-            // 2. A TRINDADE (Com Ícones Coloridos)
             Row(
               children: [
                 Icon(Icons.psychology, color: const Color(0xFF9C27B0), size: 28),
@@ -124,19 +120,17 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  // Passamos a lista 'members' (do Provider) para os dropdowns
-                  _buildDropdownRow(theme, "Quem Lembra?", "Carga Mental", Icons.psychology, const Color(0xFF9C27B0), quemLembra!, members, (val) => setState(() => quemLembra = val!)),
+                  _buildDropdownRow(theme, "Quem Lembra?", "Carga Mental", Icons.psychology, const Color(0xFF9C27B0), quemLembra!, memberNames, (val) => setState(() => quemLembra = val!)),
                   Divider(color: Colors.grey.shade100, height: 24),
-                  _buildDropdownRow(theme, "Quem Decide?", "Autoridade", Icons.balance, const Color(0xFF2196F3), quemDecide!, members, (val) => setState(() => quemDecide = val!)),
+                  _buildDropdownRow(theme, "Quem Decide?", "Autoridade", Icons.balance, const Color(0xFF2196F3), quemDecide!, memberNames, (val) => setState(() => quemDecide = val!)),
                   Divider(color: Colors.grey.shade100, height: 24),
-                  _buildDropdownRow(theme, "Quem Executa?", "Mão na Massa", Icons.fitness_center, const Color(0xFFFF5722), quemExecuta!, members, (val) => setState(() => quemExecuta = val!)),
+                  _buildDropdownRow(theme, "Quem Executa?", "Mão na Massa", Icons.fitness_center, const Color(0xFFFF5722), quemExecuta!, memberNames, (val) => setState(() => quemExecuta = val!)),
                 ],
               ),
             ),
 
             const SizedBox(height: 32),
 
-            // 3. DETALHES TÉCNICOS
             Row(
               children: [
                 Expanded(
@@ -191,7 +185,6 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
 
             const SizedBox(height: 40),
 
-            // 4. BOTÃO DE AÇÃO
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -227,10 +220,7 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
     );
   }
 
-  // WIDGET INTELIGENTE: Monta o dropdown baseado na lista dinâmica 'items'
   Widget _buildDropdownRow(ThemeData theme, String label, String sublabel, IconData icon, Color iconColor, String currentValue, List<String> items, ValueChanged<String?> onChanged) {
-    
-    // Se o valor selecionado (ex: "Tio") foi deletado, volta para o primeiro da lista
     String safeValue = items.contains(currentValue) ? currentValue : items.first;
 
     return Row(
@@ -263,7 +253,6 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
             value: safeValue,
             icon: Icon(Icons.arrow_drop_down, color: theme.colorScheme.primary),
             decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.zero),
-            // MÁGICA AQUI: Transforma a lista de membros em itens do menu
             items: items.map((role) {
               return DropdownMenuItem(
                 value: role, 

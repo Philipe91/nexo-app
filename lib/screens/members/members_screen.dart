@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart'; // <--- Importante
-import '../../core/providers/member_provider.dart'; // <--- Importante
+import 'package:provider/provider.dart';
+import '../../core/providers/member_provider.dart';
 
 class MembersScreen extends StatefulWidget {
   const MembersScreen({super.key});
@@ -15,16 +15,14 @@ class _MembersScreenState extends State<MembersScreen> {
 
   void _addMember() {
     if (_nameController.text.isNotEmpty) {
-      // ADICIONA NO PROVIDER GLOBAL
       context.read<MemberProvider>().addMember(_nameController.text);
       _nameController.clear();
       Navigator.pop(context);
     }
   }
 
-  void _removeMember(String name) {
-    // REMOVE DO PROVIDER GLOBAL
-    context.read<MemberProvider>().removeMember(name);
+  void _removeMember(String id) {
+    context.read<MemberProvider>().removeMember(id);
   }
 
   void _showAddDialog() {
@@ -51,8 +49,6 @@ class _MembersScreenState extends State<MembersScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
-    // ESCUTA A LISTA GLOBAL DE MEMBROS
     final memberProvider = context.watch<MemberProvider>();
     final members = memberProvider.members;
 
@@ -87,13 +83,12 @@ class _MembersScreenState extends State<MembersScreen> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   leading: CircleAvatar(
                     backgroundColor: _getAvatarColor(index),
-                    child: Text(member[0].toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: Text(member.name[0].toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
-                  title: Text(member, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  subtitle: const Text("Membro da Família"),
+                  title: Text(member.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                    onPressed: () => _removeMember(member),
+                    onPressed: () => _removeMember(member.id),
                   ),
                 ),
               );

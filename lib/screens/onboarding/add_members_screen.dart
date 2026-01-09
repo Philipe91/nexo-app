@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../../core/providers/member_provider.dart';
 
 class AddMembersScreen extends StatefulWidget {
-  final String familyName; // Recebe o nome da família
+  final String familyName;
 
   const AddMembersScreen({super.key, required this.familyName});
 
@@ -11,21 +13,21 @@ class AddMembersScreen extends StatefulWidget {
 }
 
 class _AddMembersScreenState extends State<AddMembersScreen> {
-  final List<String> _members = []; // Lista de pessoas
   final _memberController = TextEditingController();
 
   void _addMember() {
     if (_memberController.text.isNotEmpty) {
-      setState(() {
-        _members.add(_memberController.text);
-        _memberController.clear();
-      });
+      // Salva diretamente no Provider (Persistência)
+      context.read<MemberProvider>().addMember(_memberController.text);
+      _memberController.clear();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Escuta o provider para atualizar a lista na tela
+    final members = context.watch<MemberProvider>().members;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Quem mora aqui?')),
@@ -37,7 +39,7 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  widget.familyName, // Mostra o nome da família
+                  widget.familyName,
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.primary,
@@ -53,7 +55,6 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
             ),
           ),
 
-          // Campo de texto e botão +
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Row(
@@ -78,20 +79,18 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
 
           const SizedBox(height: 24),
 
-          // Lista de membros adicionados
           Expanded(
             child: ListView.builder(
-              itemCount: _members.length,
+              itemCount: members.length,
               itemBuilder: (context, index) {
+                final member = members[index];
                 return ListTile(
-                  leading: CircleAvatar(child: Text(_members[index][0])),
-                  title: Text(_members[index]),
+                  leading: CircleAvatar(child: Text(member.name[0].toUpperCase())),
+                  title: Text(member.name),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
                     onPressed: () {
-                      setState(() {
-                        _members.removeAt(index);
-                      });
+                      context.read<MemberProvider>().removeMember(member.id);
                     },
                   ),
                 );
@@ -99,18 +98,14 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
             ),
           ),
 
-          // Botão Finalizar
           Padding(
             padding: const EdgeInsets.all(24.0),
             child: SizedBox(
               width: double.infinity,
               child: FilledButton(
-                onPressed: _members.isNotEmpty 
-                  ? () {
-                      // Finaliza o onboarding e vai pra Home
-                      context.go('/home'); 
-                    } 
-                  : null, // Desabilita se lista vazia
+                onPressed: members.isNotEmpty 
+                  ? () => context.go('/home') 
+                  : null,
                 child: const Text('Finalizar Cadastro'),
               ),
             ),
