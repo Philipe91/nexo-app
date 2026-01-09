@@ -14,15 +14,25 @@ class MemberProvider extends ChangeNotifier {
 
   // --- AÇÕES ---
 
-  void addMember(String name) {
+  void addMember(String name, String color) {
     final newMember = Member(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: name,
-      color: '0xFF4D5BCE', // Azul padrão
+      color: color,
     );
     _members.add(newMember);
     saveMembers();
     notifyListeners();
+  }
+
+  // --- NOVO: ATUALIZAR MEMBRO ---
+  void updateMember(Member updatedMember) {
+    final index = _members.indexWhere((m) => m.id == updatedMember.id);
+    if (index >= 0) {
+      _members[index] = updatedMember;
+      saveMembers();
+      notifyListeners();
+    }
   }
 
   void removeMember(String id) {
@@ -35,7 +45,6 @@ class MemberProvider extends ChangeNotifier {
 
   Future<void> saveMembers() async {
     final prefs = await SharedPreferences.getInstance();
-    // Transforma a lista de objetos em texto JSON
     final String data = jsonEncode(_members.map((m) => m.toMap()).toList());
     await prefs.setString('members_data', data);
   }
@@ -44,8 +53,8 @@ class MemberProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.containsKey('members_data')) {
       final String data = prefs.getString('members_data')!;
+      // Decodifica a lista com segurança
       final List<dynamic> decodedList = jsonDecode(data);
-      
       _members = decodedList.map((item) => Member.fromMap(item)).toList();
       notifyListeners();
     }
