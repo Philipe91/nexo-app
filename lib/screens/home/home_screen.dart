@@ -20,7 +20,7 @@ class HomeScreen extends StatelessWidget {
     final totalLoad = taskProvider.totalMentalLoad;
     final members = memberProvider.members;
 
-    // Lógica simples para definir o status da casa (Geral)
+    // Lógica simples para definir o status da casa
     String statusText = "Equilibrada";
     Color statusColor = Colors.green;
     
@@ -40,7 +40,7 @@ class HomeScreen extends StatelessWidget {
         elevation: 0,
         title: Text('NEXO', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
         actions: [
-          // --- BOTÃO DE CHECK-IN (NOVO) ---
+          // Botão Check-in na AppBar
           TextButton.icon(
             onPressed: () => context.push('/checkin'),
             icon: const Icon(Icons.sync, size: 18),
@@ -170,7 +170,10 @@ class HomeScreen extends StatelessWidget {
 
                 const SizedBox(height: 32),
                 
-                // 3. BOTÕES DE AÇÃO RÁPIDA
+                // 3. BOTÕES DE AÇÃO RÁPIDA (GRID)
+                const Text("Acesso Rápido", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                
                 Row(
                   children: [
                     Expanded(
@@ -210,10 +213,30 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                
+                const SizedBox(height: 16),
+
+                // --- BOTÃO DE ACORDOS (NOVO) ---
+                GlassCard(
+                  onTap: () => context.push('/agreements'),
+                  color: Colors.white,
+                  opacity: 0.5,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.handshake, color: theme.colorScheme.secondary),
+                        const SizedBox(width: 12),
+                        Text("Ver Acordos da Casa", style: TextStyle(color: theme.colorScheme.secondary, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ),
 
                 const SizedBox(height: 32),
                 
-                // 4. LISTA DE TAREFAS
+                // 4. LISTA DE TAREFAS RECENTES
                 if (taskProvider.tasks.isNotEmpty) ...[
                   const Text("Tarefas Recentes", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),

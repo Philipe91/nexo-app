@@ -3,15 +3,16 @@ import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'router.dart';
 import 'core/providers/task_provider.dart';
-import 'core/providers/member_provider.dart'; // <--- Import Novo
+import 'core/providers/member_provider.dart';
+import 'core/providers/agreement_provider.dart'; // <--- Import Novo
 
 void main() {
   runApp(
-    // MultiProvider permite ter vários "bancos de dados" na memória
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => TaskProvider()),
-        ChangeNotifierProvider(create: (_) => MemberProvider()), // <--- Adicionado
+        ChangeNotifierProvider(create: (_) => MemberProvider()),
+        ChangeNotifierProvider(create: (_) => AgreementProvider()), // <--- Adicionado
       ],
       child: const NexoApp(),
     ),

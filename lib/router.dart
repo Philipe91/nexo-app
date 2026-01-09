@@ -8,7 +8,8 @@ import 'screens/onboarding/add_members_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/responsibilities/add_responsibility_screen.dart';
 import 'screens/members/members_screen.dart';
-import 'screens/checkin/checkin_screen.dart'; // <--- Import novo
+import 'screens/checkin/checkin_screen.dart';
+import 'screens/agreements/agreements_screen.dart'; // <--- Import Novo
 
 final router = GoRouter(
   initialLocation: '/',
@@ -52,10 +53,16 @@ final router = GoRouter(
       builder: (context, state) => const MembersScreen(),
     ),
 
-    // --- NOVA ROTA: CHECK-IN ---
+    // Rota Check-in
     GoRoute(
       path: '/checkin',
       builder: (context, state) => const CheckInScreen(),
+    ),
+
+    // --- NOVA ROTA: ACORDOS ---
+    GoRoute(
+      path: '/agreements',
+      builder: (context, state) => const AgreementsScreen(),
     ),
   ],
 );
