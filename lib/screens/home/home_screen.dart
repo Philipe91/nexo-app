@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/task_provider.dart';
-import '../../core/providers/member_provider.dart'; // <--- Importante para ler os membros
+import '../../core/providers/member_provider.dart';
 import '../../core/widgets/glass_card.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -40,7 +40,18 @@ class HomeScreen extends StatelessWidget {
         elevation: 0,
         title: Text('NEXO', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
         actions: [
-          IconButton(icon: const Icon(Icons.notifications_outlined), color: Colors.black87, onPressed: () {}),
+          // --- BOTÃO DE CHECK-IN (NOVO) ---
+          TextButton.icon(
+            onPressed: () => context.push('/checkin'),
+            icon: const Icon(Icons.sync, size: 18),
+            label: const Text("Check-in"),
+            style: TextButton.styleFrom(
+              foregroundColor: theme.colorScheme.primary,
+              backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            ),
+          ),
+          const SizedBox(width: 16),
         ],
       ),
       body: Stack(
@@ -100,24 +111,17 @@ class HomeScreen extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // 2. EQUILÍBRIO DA CASA (NOVO!)
-                // Mostra a carga de cada membro individualmente
+                // 2. EQUILÍBRIO DA CASA
                 if (members.isNotEmpty) ...[
                   const Text("Equilíbrio da Carga", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
                   ...members.map((member) {
-                    // Calcula a carga para ESTE membro específico (usando o nome)
                     final stats = taskProvider.calculateMentalLoad(member.name);
                     final memberLoad = stats['total'] ?? 0;
                     
-                    // Define cor baseada no esforço individual
                     Color loadColor = Colors.green;
                     if (memberLoad > 5) loadColor = Colors.orange;
                     if (memberLoad > 10) loadColor = Colors.red;
-
-                    // Cálculo visual da barra (0.0 a 1.0)
-                    double percent = totalLoad > 0 ? (memberLoad / totalLoad) : 0.0;
-                    if (percent.isNaN) percent = 0.0;
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8.0),
@@ -147,7 +151,7 @@ class HomeScreen extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 6),
                                     LinearProgressIndicator(
-                                      value: memberLoad > 0 ? (memberLoad / 15).clamp(0.0, 1.0) : 0, // Escala fixa de 15pts para visualização
+                                      value: memberLoad > 0 ? (memberLoad / 15).clamp(0.0, 1.0) : 0, 
                                       backgroundColor: Colors.grey.shade200,
                                       color: loadColor,
                                       minHeight: 6,
@@ -209,12 +213,12 @@ class HomeScreen extends StatelessWidget {
 
                 const SizedBox(height: 32),
                 
-                // 4. LISTA DE TAREFAS RECENTES
+                // 4. LISTA DE TAREFAS
                 if (taskProvider.tasks.isNotEmpty) ...[
                   const Text("Tarefas Recentes", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
                   
-                  ...taskProvider.tasks.reversed.take(5).map((task) => Padding( // Mostra só as 5 últimas
+                  ...taskProvider.tasks.reversed.take(5).map((task) => Padding( 
                     padding: const EdgeInsets.only(bottom: 12.0),
                     child: GlassCard(
                       opacity: 0.5,

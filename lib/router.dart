@@ -7,7 +7,8 @@ import 'screens/onboarding/create_family_screen.dart';
 import 'screens/onboarding/add_members_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/responsibilities/add_responsibility_screen.dart';
-import 'screens/members/members_screen.dart'; // <--- Import novo
+import 'screens/members/members_screen.dart';
+import 'screens/checkin/checkin_screen.dart'; // <--- Import novo
 
 final router = GoRouter(
   initialLocation: '/',
@@ -49,6 +50,12 @@ final router = GoRouter(
     GoRoute(
       path: '/members',
       builder: (context, state) => const MembersScreen(),
+    ),
+
+    // --- NOVA ROTA: CHECK-IN ---
+    GoRoute(
+      path: '/checkin',
+      builder: (context, state) => const CheckInScreen(),
     ),
   ],
 );
