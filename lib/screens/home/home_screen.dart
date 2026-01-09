@@ -13,14 +13,12 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    // "Escuta" os dois cérebros: Tarefas e Membros
     final taskProvider = context.watch<TaskProvider>();
     final memberProvider = context.watch<MemberProvider>();
     
     final totalLoad = taskProvider.totalMentalLoad;
     final members = memberProvider.members;
 
-    // Lógica simples para definir o status da casa
     String statusText = "Equilibrada";
     Color statusColor = Colors.green;
     
@@ -40,7 +38,7 @@ class HomeScreen extends StatelessWidget {
         elevation: 0,
         title: Text('NEXO', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
         actions: [
-          // Botão Check-in na AppBar
+          // Botão Check-in
           TextButton.icon(
             onPressed: () => context.push('/checkin'),
             icon: const Icon(Icons.sync, size: 18),
@@ -51,12 +49,19 @@ class HomeScreen extends StatelessWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             ),
           ),
-          const SizedBox(width: 16),
+          
+          // --- ÍCONE DE CONFIGURAÇÕES (NOVO) ---
+          IconButton(
+            icon: const Icon(Icons.settings_outlined), 
+            color: Colors.black87, 
+            onPressed: () => context.push('/settings'),
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Stack(
         children: [
-          // --- FUNDO (Ambient Light) ---
+          // --- FUNDO ---
           Positioned(
             top: -50, right: -50,
             child: Container(
@@ -79,7 +84,7 @@ class HomeScreen extends StatelessWidget {
               children: [
                 const SizedBox(height: 10),
                 
-                // 1. CARD DE STATUS GERAL
+                // 1. STATUS GERAL
                 GlassCard(
                   opacity: 0.6,
                   color: Colors.white,
@@ -111,7 +116,7 @@ class HomeScreen extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // 2. EQUILÍBRIO DA CASA
+                // 2. EQUILÍBRIO
                 if (members.isNotEmpty) ...[
                   const Text("Equilíbrio da Carga", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
@@ -170,7 +175,7 @@ class HomeScreen extends StatelessWidget {
 
                 const SizedBox(height: 32),
                 
-                // 3. BOTÕES DE AÇÃO RÁPIDA (GRID)
+                // 3. ACESSO RÁPIDO
                 const Text("Acesso Rápido", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
                 
@@ -216,7 +221,6 @@ class HomeScreen extends StatelessWidget {
                 
                 const SizedBox(height: 16),
 
-                // --- BOTÃO DE ACORDOS (NOVO) ---
                 GlassCard(
                   onTap: () => context.push('/agreements'),
                   color: Colors.white,
@@ -236,10 +240,19 @@ class HomeScreen extends StatelessWidget {
 
                 const SizedBox(height: 32),
                 
-                // 4. LISTA DE TAREFAS RECENTES
+                // 4. RECENTES
                 if (taskProvider.tasks.isNotEmpty) ...[
-                  const Text("Tarefas Recentes", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Tarefas Recentes", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      TextButton(
+                        onPressed: () => context.push('/responsibilities'),
+                        child: const Text("Ver Todas"),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
                   
                   ...taskProvider.tasks.reversed.take(5).map((task) => Padding( 
                     padding: const EdgeInsets.only(bottom: 12.0),
