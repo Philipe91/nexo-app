@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../../core/providers/task_provider.dart';
+import '../../core/providers/member_provider.dart';
 
 class AddResponsibilityScreen extends StatefulWidget {
   const AddResponsibilityScreen({super.key});
@@ -13,19 +16,53 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
 
   // DADOS DO FORMULÁRIO
   String title = "";
-  String quemLembra = "Mãe";
-  String quemDecide = "Pai";
-  String quemExecuta = "Ambos";
+  
+  // Valores iniciais (Começam vazios ou nulos)
+  String? quemLembra;
+  String? quemDecide;
+  String? quemExecuta;
+  
   String frequencia = "Semanal";
-  int esforco = 1; // 1 = Leve, 2 = Médio, 3 = Pesado
+  int esforco = 1;
 
-  // MOCKS (Futuramente virão do banco de dados)
-  final List<String> roles = ["Mãe", "Pai", "Ambos", "Filhos"];
   final List<String> frequencias = ["Diário", "Semanal", "Mensal", "Eventual"];
+
+  @override
+  void initState() {
+    super.initState();
+    // Inicializa os campos com os dados reais do Banco de Membros
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+       final members = context.read<MemberProvider>().members;
+       if (members.isNotEmpty) {
+         setState(() {
+           quemLembra = members.first;
+           quemDecide = members.length > 1 ? members[1] : members.first;
+           quemExecuta = members.first;
+         });
+       }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    
+    // --- AQUI ESTÁ O SEGREDO ---
+    // "Escutamos" o MemberProvider para pegar a lista real (Mãe, Pai, Tio...)
+    final members = context.watch<MemberProvider>().members;
+
+    // Se a lista estiver vazia, avisa o usuário
+    if (members.isEmpty) {
+        return Scaffold(
+            appBar: AppBar(),
+            body: const Center(child: Text("Ops! Adicione membros na tela 'Membros' primeiro."))
+        );
+    }
+    
+    // Proteção: Se a variável estiver nula, pega o primeiro membro da lista
+    quemLembra ??= members.first;
+    quemDecide ??= members.first;
+    quemExecuta ??= members.first;
 
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
@@ -62,11 +99,11 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
             
             const SizedBox(height: 32),
 
-            // 2. A TRINDADE (Mental Load)
+            // 2. A TRINDADE (Com Ícones Coloridos)
             Row(
               children: [
-                Icon(Icons.psychology, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
+                Icon(Icons.psychology, color: const Color(0xFF9C27B0), size: 28),
+                const SizedBox(width: 12),
                 Text("Definição de Papéis", 
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold, 
@@ -76,7 +113,6 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
             ),
             const SizedBox(height: 12),
             
-            // Card agrupando os papéis
             Container(
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface, 
@@ -88,11 +124,12 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  _buildDropdownRow(theme, "🧠 Quem Lembra?", "Carga Mental", quemLembra, (val) => setState(() => quemLembra = val!)),
+                  // Passamos a lista 'members' (do Provider) para os dropdowns
+                  _buildDropdownRow(theme, "Quem Lembra?", "Carga Mental", Icons.psychology, const Color(0xFF9C27B0), quemLembra!, members, (val) => setState(() => quemLembra = val!)),
                   Divider(color: Colors.grey.shade100, height: 24),
-                  _buildDropdownRow(theme, "⚖️ Quem Decide?", "Autoridade", quemDecide, (val) => setState(() => quemDecide = val!)),
+                  _buildDropdownRow(theme, "Quem Decide?", "Autoridade", Icons.balance, const Color(0xFF2196F3), quemDecide!, members, (val) => setState(() => quemDecide = val!)),
                   Divider(color: Colors.grey.shade100, height: 24),
-                  _buildDropdownRow(theme, "💪 Quem Executa?", "Mão na Massa", quemExecuta, (val) => setState(() => quemExecuta = val!)),
+                  _buildDropdownRow(theme, "Quem Executa?", "Mão na Massa", Icons.fitness_center, const Color(0xFFFF5722), quemExecuta!, members, (val) => setState(() => quemExecuta = val!)),
                 ],
               ),
             ),
@@ -110,12 +147,14 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
                         value: frequencia,
+                        isExpanded: true,
                         decoration: InputDecoration(
                           filled: true, 
                           fillColor: theme.colorScheme.surface, 
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                         ),
-                        items: frequencias.map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontSize: 14)))).toList(),
+                        items: frequencias.map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontSize: 14), overflow: TextOverflow.ellipsis))).toList(),
                         onChanged: (val) => setState(() => frequencia = val!),
                       ),
                     ],
@@ -130,15 +169,17 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
                       const SizedBox(height: 8),
                       DropdownButtonFormField<int>(
                         value: esforco,
+                        isExpanded: true,
                         decoration: InputDecoration(
                           filled: true, 
                           fillColor: theme.colorScheme.surface, 
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                         ),
-                        items: const [
-                          DropdownMenuItem(value: 1, child: Text("🟢 Leve")),
-                          DropdownMenuItem(value: 2, child: Text("🟡 Médio")),
-                          DropdownMenuItem(value: 3, child: Text("🔴 Pesado")),
+                        items: [
+                          _buildColorItem(1, "Leve", Icons.sentiment_satisfied_alt, Colors.green),
+                          _buildColorItem(2, "Médio", Icons.sentiment_neutral, Colors.orange),
+                          _buildColorItem(3, "Pesado", Icons.whatshot, Colors.red),
                         ],
                         onChanged: (val) => setState(() => esforco = val!),
                       ),
@@ -169,28 +210,64 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
     );
   }
 
-  // Widget auxiliar melhorado
-  Widget _buildDropdownRow(ThemeData theme, String label, String sublabel, String currentValue, ValueChanged<String?> onChanged) {
+  DropdownMenuItem<int> _buildColorItem(int value, String text, IconData icon, Color color) {
+    return DropdownMenuItem(
+      value: value,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Text(text, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14)),
+        ],
+      ),
+    );
+  }
+
+  // WIDGET INTELIGENTE: Monta o dropdown baseado na lista dinâmica 'items'
+  Widget _buildDropdownRow(ThemeData theme, String label, String sublabel, IconData icon, Color iconColor, String currentValue, List<String> items, ValueChanged<String?> onChanged) {
+    
+    // Se o valor selecionado (ex: "Tio") foi deletado, volta para o primeiro da lista
+    String safeValue = items.contains(currentValue) ? currentValue : items.first;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-            Text(sublabel, style: TextStyle(fontSize: 12, color: theme.colorScheme.outline)),
-          ],
+        Expanded(
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: iconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: Icon(icon, color: iconColor, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                    Text(sublabel, style: TextStyle(fontSize: 12, color: theme.colorScheme.outline)),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
         SizedBox(
-          width: 130,
+          width: 120,
           child: DropdownButtonFormField<String>(
-            value: currentValue,
+            value: safeValue,
             icon: Icon(Icons.arrow_drop_down, color: theme.colorScheme.primary),
             decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.zero),
-            items: roles.map((role) {
+            // MÁGICA AQUI: Transforma a lista de membros em itens do menu
+            items: items.map((role) {
               return DropdownMenuItem(
                 value: role, 
-                child: Text(role, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary))
+                child: Text(role, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary, fontSize: 14))
               );
             }).toList(),
             onChanged: onChanged,
@@ -203,13 +280,16 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
 
   void _saveTask() {
     if (_formKey.currentState!.validate()) {
-      // Simulação
+      context.read<TaskProvider>().addTask(
+        title: title,
+        whoRemembers: quemLembra!,
+        whoDecides: quemDecide!,
+        whoExecutes: quemExecuta!,
+        effort: esforco,
+        frequency: frequencia,
+      );
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("✨ Responsabilidade criada! ($quemLembra lembra, $quemExecuta faz)"),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          behavior: SnackBarBehavior.floating,
-        ),
+        SnackBar(content: Text("✨ $title adicionada!"), backgroundColor: Theme.of(context).colorScheme.primary, behavior: SnackBarBehavior.floating),
       );
       context.pop();
     }

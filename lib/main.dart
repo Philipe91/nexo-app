@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'router.dart';
+import 'core/providers/task_provider.dart';
+import 'core/providers/member_provider.dart'; // <--- Import Novo
 
 void main() {
-  runApp(const NexoApp());
+  runApp(
+    // MultiProvider permite ter vários "bancos de dados" na memória
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => TaskProvider()),
+        ChangeNotifierProvider(create: (_) => MemberProvider()), // <--- Adicionado
+      ],
+      child: const NexoApp(),
+    ),
+  );
 }
 
 class NexoApp extends StatelessWidget {
@@ -14,10 +26,7 @@ class NexoApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'NEXO',
       debugShowCheckedModeBanner: false,
-      
-      // AQUI ESTAVA O ERRO (Faltava a vírgula no final da linha)
-      theme: AppTheme.lightTheme, 
-      
+      theme: AppTheme.lightTheme,
       routerConfig: router,
     );
   }
