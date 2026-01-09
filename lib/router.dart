@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 
 // Imports das telas
+import 'screens/splash_screen.dart'; // <--- Import Novo
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/onboarding/create_family_screen.dart';
 import 'screens/onboarding/add_members_screen.dart';
@@ -11,18 +12,27 @@ import 'screens/responsibilities/responsibilities_screen.dart';
 import 'screens/members/members_screen.dart';
 import 'screens/checkin/checkin_screen.dart';
 import 'screens/agreements/agreements_screen.dart';
-import 'screens/settings/settings_screen.dart'; // <--- O Import que faltava
+import 'screens/settings/settings_screen.dart';
+import '../models/task_model.dart'; // Ajuste o caminho se necessário (ex: 'models/task_model.dart')
 
 final router = GoRouter(
-  initialLocation: '/',
+  initialLocation: '/', // Começa sempre pela raiz
   routes: [
-    // 1. Rota Inicial (Onboarding)
-    GoRoute(path: '/', builder: (context, state) => const OnboardingScreen()),
+    // 1. Rota Raiz agora é a SPLASH (O porteiro)
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const SplashScreen(),
+    ),
+
+    // 2. Rota de Onboarding agora tem endereço próprio
+    GoRoute(
+      path: '/onboarding',
+      builder: (context, state) => const OnboardingScreen(),
+    ),
     
-    // 2. Criar Família
+    // --- Resto das rotas continua igual ---
     GoRoute(path: '/create-family', builder: (context, state) => const CreateFamilyScreen()),
     
-    // 3. Adicionar Membros
     GoRoute(
       path: '/add-members',
       builder: (context, state) {
@@ -31,28 +41,20 @@ final router = GoRouter(
       },
     ),
 
-    // 4. Home (Principal)
     GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
 
-    // 5. Nova Responsabilidade
-    GoRoute(path: '/responsibilities/add', builder: (context, state) => const AddResponsibilityScreen()),
-
-    // 6. Lista de Responsabilidades (Ver Todas)
-    GoRoute(path: '/responsibilities', builder: (context, state) => const ResponsibilitiesScreen()),
-
-    // 7. Membros
-    GoRoute(path: '/members', builder: (context, state) => const MembersScreen()),
-
-    // 8. Check-in
-    GoRoute(path: '/checkin', builder: (context, state) => const CheckInScreen()),
-
-    // 9. Acordos
-    GoRoute(path: '/agreements', builder: (context, state) => const AgreementsScreen()),
-
-    // 10. Configurações (A rota que estava faltando!)
     GoRoute(
-      path: '/settings',
-      builder: (context, state) => const SettingsScreen(),
+      path: '/responsibilities/add',
+      builder: (context, state) {
+        final taskToEdit = state.extra as Task?;
+        return AddResponsibilityScreen(taskToEdit: taskToEdit);
+      },
     ),
+
+    GoRoute(path: '/responsibilities', builder: (context, state) => const ResponsibilitiesScreen()),
+    GoRoute(path: '/members', builder: (context, state) => const MembersScreen()),
+    GoRoute(path: '/checkin', builder: (context, state) => const CheckInScreen()),
+    GoRoute(path: '/agreements', builder: (context, state) => const AgreementsScreen()),
+    GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
   ],
 );

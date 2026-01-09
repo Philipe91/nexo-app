@@ -154,15 +154,30 @@ class _ResponsibilitiesScreenState extends State<ResponsibilitiesScreen> {
                                     const SizedBox(height: 8),
                                     _buildDetailRow("💪 Quem Executa", task.whoExecutes),
                                     const Divider(height: 24),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: TextButton.icon(
-                                        onPressed: () {
-                                          context.read<TaskProvider>().removeTask(task.id);
-                                        },
-                                        icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                                        label: const Text("Excluir Tarefa", style: TextStyle(color: Colors.red)),
-                                      ),
+                                    
+                                    // --- BOTOES DE AÇÃO (AQUI ESTÁ A MUDANÇA) ---
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        // BOTÃO EDITAR (NOVO)
+                                        TextButton.icon(
+                                          onPressed: () {
+                                            // Passa a tarefa inteira (task) via 'extra' para edição
+                                            context.push('/responsibilities/add', extra: task);
+                                          },
+                                          icon: const Icon(Icons.edit, size: 20),
+                                          label: const Text("Editar"),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        // BOTÃO EXCLUIR
+                                        TextButton.icon(
+                                          onPressed: () {
+                                            context.read<TaskProvider>().removeTask(task.id);
+                                          },
+                                          icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                          label: const Text("Excluir", style: TextStyle(color: Colors.red)),
+                                        ),
+                                      ],
                                     )
                                   ],
                                 ),

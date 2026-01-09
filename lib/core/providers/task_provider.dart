@@ -8,7 +8,7 @@ class TaskProvider extends ChangeNotifier {
 
   List<Task> get tasks => _tasks;
 
-  // Carga total da casa (soma de todos os esforços)
+  // Carga total da casa
   int get totalMentalLoad {
     if (_tasks.isEmpty) return 0;
     return _tasks.fold(0, (sum, item) => sum + item.effort);
@@ -18,15 +18,13 @@ class TaskProvider extends ChangeNotifier {
     loadTasks();
   }
 
-  // --- NOVA FUNÇÃO: CALCULADORA DE CARGA MENTAL ---
-  // A Home usa isso para desenhar as barrinhas de progresso
+  // Calculadora de Carga Mental
   Map<String, int> calculateMentalLoad(String memberName) {
     int remember = 0;
     int decide = 0;
     int execute = 0;
 
     for (var task in _tasks) {
-      // Se a tarefa vale 3 pontos, soma 3 pontos para quem é responsável
       if (task.whoRemembers == memberName) remember += task.effort;
       if (task.whoDecides == memberName) decide += task.effort;
       if (task.whoExecutes == memberName) execute += task.effort;
@@ -64,6 +62,16 @@ class TaskProvider extends ChangeNotifier {
     _tasks.add(newTask);
     saveTasks();
     notifyListeners();
+  }
+
+  // --- NOVO: EDITAR TAREFA ---
+  void updateTask(Task updatedTask) {
+    final index = _tasks.indexWhere((t) => t.id == updatedTask.id);
+    if (index >= 0) {
+      _tasks[index] = updatedTask;
+      saveTasks();
+      notifyListeners();
+    }
   }
 
   void removeTask(String id) {

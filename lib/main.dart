@@ -4,7 +4,8 @@ import 'core/theme/app_theme.dart';
 import 'router.dart';
 import 'core/providers/task_provider.dart';
 import 'core/providers/member_provider.dart';
-import 'core/providers/agreement_provider.dart'; // <--- Import Novo
+import 'core/providers/agreement_provider.dart';
+import 'core/providers/checkin_provider.dart'; // <--- Import Novo
 
 void main() {
   runApp(
@@ -12,7 +13,8 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => TaskProvider()),
         ChangeNotifierProvider(create: (_) => MemberProvider()),
-        ChangeNotifierProvider(create: (_) => AgreementProvider()), // <--- Adicionado
+        ChangeNotifierProvider(create: (_) => AgreementProvider()),
+        ChangeNotifierProvider(create: (_) => CheckInProvider()), // <--- Adicionado
       ],
       child: const NexoApp(),
     ),
