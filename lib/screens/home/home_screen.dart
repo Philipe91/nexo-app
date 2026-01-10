@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/providers/task_provider.dart';
 import '../../core/providers/member_provider.dart';
 import '../../core/widgets/glass_card.dart';
+import '../../core/widgets/app_drawer.dart'; // <--- Import do Drawer Novo
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -12,13 +13,10 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     final taskProvider = context.watch<TaskProvider>();
-    final memberProvider = context.watch<MemberProvider>();
-
     final totalLoad = taskProvider.totalMentalLoad;
-    final members = memberProvider.members;
 
+    // Definição de Cores do Status
     String statusText = "Equilibrada";
     Color statusColor = Colors.green;
     Color gradientStart = const Color(0xFF43cea2);
@@ -39,504 +37,245 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       extendBodyBehindAppBar: true,
+      drawer: const AppDrawer(), // <--- AQUI ESTÁ O DRAWER
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: false,
-        title: Padding(
-          padding: const EdgeInsets.only(left: 8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Olá, Família 👋',
-                  style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.normal)),
-              Text('NEXO',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    color: theme.colorScheme.primary,
-                    letterSpacing: -1,
-                  )),
-            ],
+        // Ícone do Menu (Avatar do Usuário)
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: CircleAvatar(
+              backgroundColor: Colors.white,
+              child: Icon(Icons.person, color: theme.colorScheme.primary),
+            ),
+            onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
+        centerTitle: true,
+        title: Text('NEXO',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              color: theme.colorScheme.primary,
+              letterSpacing: 2,
+            )),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12.0),
-            child: InkWell(
-              onTap: () => context.push('/checkin'),
-              borderRadius: BorderRadius.circular(30),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      theme.colorScheme.primary,
-                      theme.colorScheme.secondary
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.colorScheme.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    )
-                  ],
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.bolt_rounded, color: Colors.white, size: 18),
-                    SizedBox(width: 6),
-                    Text("Check-in",
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: InkWell(
-              onTap: () => context.push('/settings'),
-              borderRadius: BorderRadius.circular(50),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                  border: Border.all(color: Colors.grey.shade200),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.black.withOpacity(0.05), blurRadius: 10)
-                  ],
-                ),
-                child: Icon(Icons.person_outline_rounded,
-                    color: theme.colorScheme.primary),
-              ),
-            ),
-          ),
+          IconButton(
+            icon: const Icon(Icons.notifications_none_rounded,
+                color: Colors.black87),
+            onPressed: () {},
+          )
         ],
       ),
       body: Stack(
         children: [
+          // --- FUNDO AMBIENTE ---
           Positioned(
-            top: -50,
-            right: -50,
+            top: -100,
+            left: -50,
             child: Container(
                     width: 300,
                     height: 300,
                     decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.blue.shade100.withOpacity(0.5)))
-                .blur(80),
+                        shape: BoxShape.circle, color: Colors.blue.shade50))
+                .blur(60),
           ),
           Positioned(
             top: 100,
-            left: -50,
+            right: -50,
             child: Container(
                     width: 200,
                     height: 200,
                     decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.purple.shade100.withOpacity(0.5)))
+                        shape: BoxShape.circle, color: Colors.purple.shade50))
                 .blur(60),
           ),
+
           SafeArea(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               children: [
                 const SizedBox(height: 10),
 
-                // 1. STATUS GERAL
-                Container(
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.white.withOpacity(0.9),
-                          Colors.white.withOpacity(0.4)
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      border: Border.all(color: Colors.white.withOpacity(0.2)),
-                      boxShadow: [
-                        BoxShadow(
-                            color: statusColor.withOpacity(0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10))
-                      ]),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                // 1. CARD DE STATUS (O Coração do Dashboard)
+                GlassCard(
+                  opacity: 0.9,
+                  borderRadius: BorderRadius.circular(24),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Status da Casa',
-                                        style: TextStyle(
-                                            color: Colors.grey.shade600,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold)),
-                                    const SizedBox(height: 4),
-                                    Text(statusText,
-                                        style: TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.w900,
-                                            color: statusColor)),
-                                  ],
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                      color: statusColor.withOpacity(0.1),
-                                      shape: BoxShape.circle),
-                                  child: Icon(Icons.auto_graph_rounded,
-                                      color: statusColor),
-                                )
+                                Text('Carga Mental',
+                                    style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold)),
+                                Text(statusText,
+                                    style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w900,
+                                        color: statusColor)),
                               ],
                             ),
-                            const SizedBox(height: 20),
-                            Text('$totalLoad Pontos de Carga Total',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade600,
-                                    fontWeight: FontWeight.w500)),
-                            const SizedBox(height: 8),
                             Container(
-                              height: 8,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(4),
-                                  color: Colors.grey.shade200),
-                              child: LayoutBuilder(
-                                builder: (context, constraints) {
-                                  double percent =
-                                      (totalLoad / 30).clamp(0.0, 1.0);
-                                  return Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Container(
-                                      width: constraints.maxWidth * percent,
-                                      decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(4),
-                                          gradient: LinearGradient(colors: [
-                                            gradientStart,
-                                            gradientEnd
-                                          ])),
-                                    ),
-                                  );
-                                },
+                                color: statusColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
                               ),
-                            ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.auto_graph,
+                                      size: 16, color: statusColor),
+                                  const SizedBox(width: 4),
+                                  Text('$totalLoad pts',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: statusColor)),
+                                ],
+                              ),
+                            )
                           ],
                         ),
-                      ),
+                        const SizedBox(height: 20),
+                        // Barra de Progresso Bonita
+                        Container(
+                          height: 12,
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(6),
+                              color: Colors.grey.shade100),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              double percent = (totalLoad / 40).clamp(0.0, 1.0);
+                              return Align(
+                                alignment: Alignment.centerLeft,
+                                child: Container(
+                                  width: constraints.maxWidth * percent,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(6),
+                                    gradient: LinearGradient(
+                                        colors: [gradientStart, gradientEnd]),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
 
                 const SizedBox(height: 32),
 
-                // 2. EQUILÍBRIO
-                if (members.isNotEmpty) ...[
-                  Row(
-                    children: [
-                      const Text("Equilíbrio",
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold)),
-                      const Spacer(),
-                      Text("${members.length} membros",
-                          style: TextStyle(
-                              fontSize: 12, color: Colors.grey.shade500)),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    height: 100,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: members.length,
-                      itemBuilder: (context, index) {
-                        final member = members[index];
-                        final stats =
-                            taskProvider.calculateMentalLoad(member.name);
-                        final memberLoad = stats['total'] ?? 0;
-
-                        return Container(
-                          width: 80,
-                          margin: const EdgeInsets.only(right: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.6),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                                color: Colors.white.withOpacity(0.5)),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              CircleAvatar(
-                                radius: 20,
-                                backgroundColor:
-                                    theme.colorScheme.primary.withOpacity(0.1),
-                                child: Text(member.name[0],
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: theme.colorScheme.primary)),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(member.name,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12),
-                                  overflow: TextOverflow.ellipsis),
-                              Text("$memberLoad pts",
-                                  style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.grey.shade600)),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: 32),
-
-                // 3. ACESSO RÁPIDO
-                const Text("O que vamos fazer?",
+                // 2. GRID DE AÇÕES (MODERNO E LIMPO)
+                const Text("Acesso Rápido",
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
 
-                Row(
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 1.1, // Quadrados um pouco mais largos
                   children: [
-                    Expanded(
-                      child: _buildActionButton(context,
-                          icon: Icons.add_circle_outline,
-                          label: "Nova Tarefa",
-                          color: theme.colorScheme.primary,
-                          isPrimary: true,
-                          onTap: () => context.push('/responsibilities/add')),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildActionButton(context,
-                          icon: Icons.group_outlined,
-                          label: "Membros",
-                          color: theme.colorScheme.secondary,
-                          isPrimary: false,
-                          onTap: () => context.push('/members')),
-                    ),
+                    _buildGridCard(context,
+                        icon: Icons.calendar_month_rounded,
+                        color: Colors.blue,
+                        title: "Planejamento",
+                        subtitle: "Semanal",
+                        onTap: () => context.push('/planning')),
+                    _buildGridCard(context,
+                        icon: Icons.sports_esports_rounded,
+                        color: Colors.purple,
+                        title: "Modo Filho",
+                        subtitle: "Gamificação",
+                        onTap: () => context.push('/kid-mode')),
+                    _buildGridCard(context,
+                        icon: Icons.bolt_rounded,
+                        color: Colors.orange,
+                        title: "Check-in",
+                        subtitle: "Avaliar Semana",
+                        onTap: () => context.push('/checkin')),
+                    _buildGridCard(context,
+                        icon: Icons.handshake_rounded,
+                        color: Colors.pink,
+                        title: "Acordos",
+                        subtitle: "Regras da Casa",
+                        onTap: () => context.push('/agreements')),
                   ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // PLANEJAMENTO SEMANAL
-                GlassCard(
-                  onTap: () => context.push('/planning'),
-                  color: Colors.white,
-                  opacity: 0.8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 20),
-                    decoration: BoxDecoration(
-                      border: Border(
-                          left: BorderSide(
-                              color: theme.colorScheme.primary, width: 4)),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.calendar_month_rounded,
-                            color: theme.colorScheme.primary, size: 28),
-                        const SizedBox(width: 16),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Planejamento Semanal",
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16)),
-                              Text("Veja a rotina dia a dia",
-                                  style: TextStyle(
-                                      fontSize: 12, color: Colors.grey)),
-                            ],
-                          ),
-                        ),
-                        Icon(Icons.arrow_forward_ios,
-                            size: 14, color: Colors.grey.shade400),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // --- MODO EXECUÇÃO (NOVO) ---
-                GlassCard(
-                  onTap: () => context.push('/kid-mode'),
-                  color: Colors.white,
-                  opacity: 0.8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 20),
-                    decoration: BoxDecoration(
-                      border: Border(
-                          left: BorderSide(
-                              color: Colors.purpleAccent,
-                              width: 4)), // Cor diferente
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.sports_esports,
-                            color: Colors.purpleAccent,
-                            size: 28), // Ícone de Game
-                        const SizedBox(width: 16),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Modo Execução",
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16)),
-                              Text("Gamificação para filhos (e pais!)",
-                                  style: TextStyle(
-                                      fontSize: 12, color: Colors.grey)),
-                            ],
-                          ),
-                        ),
-                        Icon(Icons.arrow_forward_ios,
-                            size: 14, color: Colors.grey.shade400),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // ACORDOS DA CASA
-                GlassCard(
-                  onTap: () => context.push('/agreements'),
-                  color: Colors.white,
-                  opacity: 0.6,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 16),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                              color: Colors.orange.shade50,
-                              borderRadius: BorderRadius.circular(8)),
-                          child: const Icon(Icons.handshake_outlined,
-                              color: Colors.orange, size: 20),
-                        ),
-                        const SizedBox(width: 16),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Acordos da Casa",
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
-                              Text("Regras e combinados",
-                                  style: TextStyle(
-                                      fontSize: 12, color: Colors.grey)),
-                            ],
-                          ),
-                        ),
-                        Icon(Icons.arrow_forward_ios,
-                            size: 14, color: Colors.grey.shade400),
-                      ],
-                    ),
-                  ),
                 ),
 
                 const SizedBox(height: 32),
 
-                // 4. RECENTES
-                if (taskProvider.tasks.isNotEmpty) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text("Recentes",
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold)),
-                      InkWell(
-                        onTap: () => context.push('/responsibilities'),
-                        child: Text("Ver tudo",
-                            style: TextStyle(
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  ...taskProvider.tasks.reversed
-                      .take(5)
-                      .map((task) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12.0),
-                            child: GlassCard(
-                              opacity: 0.8,
-                              color: Colors.white,
-                              child: ListTile(
-                                leading: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: _getEffortColor(task.effort)
-                                        .withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(task.effort.toString(),
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.w900,
-                                          color: _getEffortColor(task.effort),
-                                          fontSize: 16)),
-                                ),
-                                title: Text(task.title,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14)),
-                                subtitle: Text(
-                                  "${task.whoRemembers} lembra • ${task.days.isNotEmpty ? task.days.join(', ') : task.frequency}",
+                // 3. TAREFAS RÁPIDAS (Botão Gigante)
+                InkWell(
+                  onTap: () => context.push('/responsibilities'),
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.grey.shade200),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withOpacity(0.02),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4))
+                        ]),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withOpacity(0.1),
+                              shape: BoxShape.circle),
+                          child: Icon(Icons.list_alt_rounded,
+                              color: theme.colorScheme.primary),
+                        ),
+                        const SizedBox(width: 16),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("Lista de Tarefas",
                                   style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade500),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                trailing: Icon(Icons.more_vert,
-                                    color: Colors.grey.shade400),
-                                onTap: () => context
-                                    .push('/responsibilities/add', extra: task),
-                              ),
-                            ),
-                          ))
-                      .toList(),
-                ]
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16)),
+                              Text("Ver todas as responsabilidades",
+                                  style: TextStyle(
+                                      fontSize: 12, color: Colors.grey)),
+                            ],
+                          ),
+                        ),
+                        // Botão de Adicionar Rápido
+                        IconButton(
+                          onPressed: () =>
+                              context.push('/responsibilities/add'),
+                          icon: Container(
+                            decoration: BoxDecoration(
+                                color: theme.colorScheme.primary,
+                                shape: BoxShape.circle),
+                            padding: const EdgeInsets.all(8),
+                            child: const Icon(Icons.add,
+                                color: Colors.white, size: 20),
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -545,50 +284,46 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(BuildContext context,
+  Widget _buildGridCard(BuildContext context,
       {required IconData icon,
-      required String label,
       required Color color,
-      required bool isPrimary,
+      required String title,
+      required String subtitle,
       required VoidCallback onTap}) {
-    return InkWell(
+    return GlassCard(
       onTap: onTap,
+      color: Colors.white,
+      opacity: 0.8,
       borderRadius: BorderRadius.circular(20),
-      child: Container(
-        height: 100,
-        decoration: BoxDecoration(
-          color: isPrimary ? color : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: isPrimary ? null : Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: isPrimary
-                  ? color.withOpacity(0.4)
-                  : Colors.black.withOpacity(0.05),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            )
-          ],
-        ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(icon, color: isPrimary ? Colors.white : color, size: 32),
-            const SizedBox(height: 8),
-            Text(label,
-                style: TextStyle(
-                    color: isPrimary ? Colors.white : Colors.black87,
-                    fontWeight: FontWeight.bold)),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 28),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(subtitle,
+                    style:
+                        TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+              ],
+            )
           ],
         ),
       ),
     );
-  }
-
-  Color _getEffortColor(int effort) {
-    if (effort == 1) return Colors.green;
-    if (effort == 2) return Colors.orange;
-    return Colors.red;
   }
 }
 
