@@ -6,6 +6,7 @@ class Task {
   final String whoExecutes;
   final int effort;
   final String frequency;
+  final List<String> days; // <--- NOVO CAMPO
   final DateTime createdAt;
 
   Task({
@@ -16,10 +17,10 @@ class Task {
     required this.whoExecutes,
     required this.effort,
     required this.frequency,
+    required this.days, // <--- NOVO
     required this.createdAt,
   });
 
-  // Converte para Mapa (JSON)
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -29,11 +30,11 @@ class Task {
       'whoExecutes': whoExecutes,
       'effort': effort,
       'frequency': frequency,
+      'days': days, // <--- NOVO
       'createdAt': createdAt.toIso8601String(),
     };
   }
 
-  // Cria a partir do Mapa (JSON)
   factory Task.fromMap(Map<String, dynamic> map) {
     return Task(
       id: map['id'] ?? '',
@@ -43,8 +44,10 @@ class Task {
       whoExecutes: map['whoExecutes'] ?? '',
       effort: map['effort'] ?? 1,
       frequency: map['frequency'] ?? 'Semanal',
-      createdAt: map['createdAt'] != null 
-          ? DateTime.parse(map['createdAt']) 
+      // Garante que leia como lista de strings, mesmo se vier null
+      days: List<String>.from(map['days'] ?? []),
+      createdAt: map['createdAt'] != null
+          ? DateTime.parse(map['createdAt'])
           : DateTime.now(),
     );
   }

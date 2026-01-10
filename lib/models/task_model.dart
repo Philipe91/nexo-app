@@ -6,6 +6,8 @@ class Task {
   final String whoExecutes;
   final int effort;
   final String frequency;
+  final List<String> days; // Dias da semana (Seg, Ter...)
+  final DateTime? lastCompletedDate; // Quando foi feita pela última vez
   final DateTime createdAt;
 
   Task({
@@ -16,6 +18,8 @@ class Task {
     required this.whoExecutes,
     required this.effort,
     required this.frequency,
+    required this.days,
+    this.lastCompletedDate,
     required this.createdAt,
   });
 
@@ -29,6 +33,8 @@ class Task {
       'whoExecutes': whoExecutes,
       'effort': effort,
       'frequency': frequency,
+      'days': days,
+      'lastCompletedDate': lastCompletedDate?.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -43,8 +49,14 @@ class Task {
       whoExecutes: map['whoExecutes'] ?? '',
       effort: map['effort'] ?? 1,
       frequency: map['frequency'] ?? 'Semanal',
-      createdAt: map['createdAt'] != null 
-          ? DateTime.parse(map['createdAt']) 
+      // Garante que leia como lista de strings
+      days: List<String>.from(map['days'] ?? []),
+      // Lê a data de conclusão (pode ser null)
+      lastCompletedDate: map['lastCompletedDate'] != null
+          ? DateTime.parse(map['lastCompletedDate'])
+          : null,
+      createdAt: map['createdAt'] != null
+          ? DateTime.parse(map['createdAt'])
           : DateTime.now(),
     );
   }

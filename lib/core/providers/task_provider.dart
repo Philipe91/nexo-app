@@ -8,7 +8,6 @@ class TaskProvider extends ChangeNotifier {
 
   List<Task> get tasks => _tasks;
 
-  // Carga total da casa
   int get totalMentalLoad {
     if (_tasks.isEmpty) return 0;
     return _tasks.fold(0, (sum, item) => sum + item.effort);
@@ -16,6 +15,11 @@ class TaskProvider extends ChangeNotifier {
 
   TaskProvider() {
     loadTasks();
+  }
+
+  // Filtrar tarefas por dia (ex: "Seg")
+  List<Task> getTasksForDay(String dayCode) {
+    return _tasks.where((t) => t.days.contains(dayCode)).toList();
   }
 
   // Calculadora de Carga Mental
@@ -47,6 +51,7 @@ class TaskProvider extends ChangeNotifier {
     required String whoExecutes,
     required int effort,
     required String frequency,
+    required List<String> days,
   }) {
     final newTask = Task(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -56,6 +61,7 @@ class TaskProvider extends ChangeNotifier {
       whoExecutes: whoExecutes,
       effort: effort,
       frequency: frequency,
+      days: days,
       createdAt: DateTime.now(),
     );
 
@@ -64,10 +70,45 @@ class TaskProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- NOVO: EDITAR TAREFA ---
   void updateTask(Task updatedTask) {
     final index = _tasks.indexWhere((t) => t.id == updatedTask.id);
     if (index >= 0) {
+      _tasks[index] = updatedTask;
+      saveTasks();
+      notifyListeners();
+    }
+  }
+
+  // --- NOVO: COMPLETAR/DESCOMPLETAR TAREFA (CHECK) ---
+  void toggleTaskCompletion(String taskId) {
+    final index = _tasks.indexWhere((t) => t.id == taskId);
+    if (index >= 0) {
+      final task = _tasks[index];
+      final now = DateTime.now();
+
+      // Verifica se já foi feita hoje (compara Dia, Mês e Ano)
+      bool isDoneToday = false;
+      if (task.lastCompletedDate != null) {
+        final last = task.lastCompletedDate!;
+        isDoneToday = last.year == now.year &&
+            last.month == now.month &&
+            last.day == now.day;
+      }
+
+      // Se já fez hoje, "desfaz" (null). Se não fez, marca hoje.
+      final updatedTask = Task(
+        id: task.id,
+        title: task.title,
+        whoRemembers: task.whoRemembers,
+        whoDecides: task.whoDecides,
+        whoExecutes: task.whoExecutes,
+        effort: task.effort,
+        frequency: task.frequency,
+        days: task.days,
+        createdAt: task.createdAt,
+        lastCompletedDate: isDoneToday ? null : now, // Toggle data
+      );
+
       _tasks[index] = updatedTask;
       saveTasks();
       notifyListeners();
