@@ -1,21 +1,57 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
-import '../../core/providers/member_provider.dart';
-import '../../core/providers/task_provider.dart';
-import '../../core/providers/agreement_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/providers/preferences_provider.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  
+  // Função para Editar Nome da Família
+  void _editFamilyName(BuildContext context) {
+    final prefs = context.read<PreferencesProvider>();
+    final controller = TextEditingController(text: prefs.familyName);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Nome da Casa"),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: "Ex: Toca do Urso",
+            border: OutlineInputBorder(),
+          ),
+          textCapitalization: TextCapitalization.words,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
+          FilledButton(
+            onPressed: () {
+              if (controller.text.isNotEmpty) {
+                prefs.updateFamilyName(controller.text);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text("Salvar"),
+          )
+        ],
+      ),
+    );
+  }
+
   Future<void> _resetApp(BuildContext context) async {
-    // 1. Confirmação
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Apagar tudo?"),
-        content: const Text("Isso excluirá todos os membros, tarefas e acordos. O app voltará para o início."),
+        content: const Text("Isso excluirá todos os dados. Essa ação é irreversível."),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancelar")),
           FilledButton(
@@ -28,25 +64,19 @@ class SettingsScreen extends StatelessWidget {
     );
 
     if (confirm == true) {
-      // 2. Limpa o Banco de Dados Local
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-
-      // 3. Força o reinício (Navega para a rota inicial e limpa a pilha)
       if (context.mounted) {
-        // O ideal seria limpar os Providers também, mas o Hot Restart do app fará isso.
-        // Aqui forçamos a ida para o Onboarding.
         context.go('/'); 
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("App resetado com sucesso!")),
-        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final prefs = context.watch<PreferencesProvider>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Configurações"),
@@ -54,18 +84,42 @@ class SettingsScreen extends StatelessWidget {
       ),
       body: ListView(
         children: [
-          ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: const Text("Sobre o NEXO"),
-            subtitle: const Text("Versão 1.0.0 (Alpha)"),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text("GERAL", style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 12)),
           ),
+          
+          ListTile(
+            leading: const Icon(Icons.home_outlined),
+            title: const Text("Nome da Casa"),
+            subtitle: Text(prefs.familyName),
+            trailing: const Icon(Icons.edit, size: 16),
+            onTap: () => _editFamilyName(context),
+          ),
+          
+          SwitchListTile(
+            secondary: const Icon(Icons.dark_mode_outlined),
+            title: const Text("Modo Escuro"),
+            value: prefs.isDarkMode,
+            onChanged: (val) => prefs.toggleTheme(val),
+          ),
+
           const Divider(),
+          
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text("DADOS", style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 12)),
+          ),
+          
           ListTile(
             leading: const Icon(Icons.delete_forever, color: Colors.red),
-            title: const Text("Resetar Aplicativo", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-            subtitle: const Text("Apaga todos os dados e volta ao início"),
+            title: const Text("Resetar Aplicativo", style: TextStyle(color: Colors.red)),
             onTap: () => _resetApp(context),
           ),
+          
+          const SizedBox(height: 32),
+          Center(child: Text("NEXO v1.1.0", style: TextStyle(color: Colors.grey.shade400, fontSize: 12))),
         ],
       ),
     );

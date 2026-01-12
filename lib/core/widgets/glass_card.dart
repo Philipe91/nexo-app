@@ -12,22 +12,32 @@ class GlassCard extends StatelessWidget {
   const GlassCard({
     super.key,
     required this.child,
-    this.blur = 10.0,            // O quanto embaça o fundo
-    this.opacity = 0.1,          // Transparência do vidro (10%)
-    this.color = Colors.white,   // Cor do vidro
+    this.blur = 10.0,
+    this.opacity = 0.1, // Opacidade padrão
+    this.color,         // Se null, vamos decidir baseado no tema
     this.borderRadius,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Bordas arredondadas padrão se não for passado nada
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    // Define a cor base automaticamente se não for passada
+    final baseColor = color ?? (isDark ? Colors.black : Colors.white);
+    
+    // Ajusta a borda para ser sutil em ambos os modos
+    final borderColor = isDark 
+        ? Colors.white.withOpacity(0.05) 
+        : Colors.white.withOpacity(0.4);
+
     final radius = borderRadius ?? BorderRadius.circular(16);
 
     return ClipRRect(
       borderRadius: radius,
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur), // O desfoque mágico
+        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -35,19 +45,18 @@ class GlassCard extends StatelessWidget {
             borderRadius: radius,
             child: Container(
               decoration: BoxDecoration(
-                color: color!.withOpacity(opacity), // Fundo translúcido
+                // Usa a cor base com a opacidade definida
+                color: baseColor.withOpacity(isDark ? 0.6 : 0.7), 
                 borderRadius: radius,
                 border: Border.all(
-                  // Borda fina brilhante para dar o efeito de "borda de vidro"
-                  color: Colors.white.withOpacity(0.1), 
+                  color: borderColor,
                   width: 1.0,
                 ),
-                // Sombra suave para destacar do fundo
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
                     blurRadius: 10,
-                    spreadRadius: -5,
+                    spreadRadius: -2,
                   )
                 ]
               ),
