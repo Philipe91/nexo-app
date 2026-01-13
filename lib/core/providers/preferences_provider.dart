@@ -1,66 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class PreferencesProvider extends ChangeNotifier {
-  // Estado Inicial
-  ThemeMode _themeMode = ThemeMode.system;
-  String _familyName = "Nossa Família";
+class PreferencesProvider with ChangeNotifier {
+  // --- Variáveis de Estado ---
+  bool _isDarkMode = false;
+  String _familyName = "Minha Família"; // Valor padrão para não dar erro
 
-  // Getters
-  ThemeMode get themeMode => _themeMode;
-  String get familyName => _familyName;
-  bool get isDarkMode => _themeMode == ThemeMode.dark;
+  // --- Getters (O que as telas leem) ---
+  bool get isDarkMode => _isDarkMode;
+  String get familyName => _familyName; // <--- O getter que o erro pediu
 
   PreferencesProvider() {
     _loadPreferences();
   }
 
-  // --- AÇÕES ---
+  // --- Funções de Ação ---
 
-  void toggleTheme(bool isDark) {
-    _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
-    _saveTheme();
+  // Agora aceita um valor bool (isOn) para funcionar com o Switch do menu
+  void toggleTheme(bool isOn) async {
+    _isDarkMode = isOn;
     notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setBool('isDarkMode', _isDarkMode);
   }
 
-  void updateFamilyName(String newName) {
+  // Função para mudar o nome da família (útil para as configurações)
+  void updateFamilyName(String newName) async {
     _familyName = newName;
-    _saveFamilyName();
     notifyListeners();
-  }
-
-  // --- PERSISTÊNCIA ---
-
-  Future<void> _saveTheme() async {
     final prefs = await SharedPreferences.getInstance();
-    // Salva 0 para Light, 1 para Dark, 2 para System
-    int themeIndex = 0;
-    if (_themeMode == ThemeMode.dark) themeIndex = 1;
-    if (_themeMode == ThemeMode.system) themeIndex = 2;
-    
-    await prefs.setInt('theme_mode', themeIndex);
+    prefs.setString('familyName', _familyName);
   }
 
-  Future<void> _saveFamilyName() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('family_name', _familyName);
-  }
-
+  // --- Carregamento Inicial ---
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     
-    // Carregar Tema
-    if (prefs.containsKey('theme_mode')) {
-      final index = prefs.getInt('theme_mode') ?? 0;
-      if (index == 1) _themeMode = ThemeMode.dark;
-      else if (index == 2) _themeMode = ThemeMode.system;
-      else _themeMode = ThemeMode.light;
-    }
-
-    // Carregar Nome da Família
-    if (prefs.containsKey('family_name')) {
-      _familyName = prefs.getString('family_name')!;
-    }
+    // Carrega Tema
+    _isDarkMode = prefs.getBool('isDarkMode') ?? false;
+    
+    // Carrega Nome da Família
+    _familyName = prefs.getString('familyName') ?? "Minha Família";
     
     notifyListeners();
   }
