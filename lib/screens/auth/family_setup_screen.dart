@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/providers/preferences_provider.dart';
+import '../../core/providers/member_provider.dart'; 
 
 class FamilySetupScreen extends StatefulWidget {
   const FamilySetupScreen({super.key});
@@ -16,10 +17,17 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
 
   void _finishSetup() {
     if (_familyNameController.text.isNotEmpty) {
-      // Salva o nome da família no Provider
+      // 1. Salva o nome da família nas preferências
       context.read<PreferencesProvider>().updateFamilyName(_familyNameController.text);
       
-      // Vai para a Home
+      // 2. CRIA O PRIMEIRO MEMBRO (VOCÊ)
+      // Isso evita o loop infinito, pois agora o app sabe que existe um membro
+      context.read<MemberProvider>().addMember(
+        "Eu (Admin)", 
+        "0xFF4D5BCE" // Azul padrão
+      );
+      
+      // 3. Vai para a Home
       context.go('/');
     }
   }

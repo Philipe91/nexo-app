@@ -19,7 +19,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkLoginStatus() async {
-    // 1. Aguarda um tempo mínimo para mostrar a logo (opcional, mas fica bonito)
+    // 1. Aguarda um tempo mínimo para mostrar a logo
     await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
@@ -29,14 +29,14 @@ class _SplashScreenState extends State<SplashScreen> {
     final hasMembers = prefs.containsKey('members_data') && 
                        (prefs.getString('members_data') != "[]");
 
-    // 3. Verifica também se o Provider já carregou (garantia extra)
+    // 3. Verifica também se o Provider já carregou
     final memberProvider = context.read<MemberProvider>();
     
     // 4. Decide para onde ir
     if (hasMembers || memberProvider.members.isNotEmpty) {
-      context.go('/home'); // Usuário já tem família -> Home
+      context.go('/'); // Vai para Home
     } else {
-      context.go('/onboarding'); // Usuário novo -> Boas-vindas
+      context.go('/onboarding'); // Usuário novo
     }
   }
 
@@ -45,12 +45,11 @@ class _SplashScreenState extends State<SplashScreen> {
     final theme = Theme.of(context);
     
     return Scaffold(
-      backgroundColor: theme.colorScheme.primary, // Fundo azul do tema
+      backgroundColor: theme.colorScheme.primary,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Logo Animada (simples ícone crescendo)
             TweenAnimationBuilder<double>(
               tween: Tween(begin: 0.0, end: 1.0),
               duration: const Duration(seconds: 1),
