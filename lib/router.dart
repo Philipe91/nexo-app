@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart'; // <--- ADICIONADO
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,8 +13,11 @@ import 'core/providers/cycle_provider.dart';
 import 'core/providers/agreement_provider.dart';
 import 'core/providers/preferences_provider.dart';
 
+// --- ARQUIVO GERADO PELO FLUTTERFIRE ---
+import 'firebase_options.dart'; // <--- ADICIONADO
+
 // --- IMPORTS DAS TELAS ---
-import 'screens/splash_screen.dart'; // <--- IMPORTANTE
+import 'screens/splash_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/responsibilities/responsibilities_screen.dart';
@@ -26,6 +30,19 @@ import 'screens/auth/family_setup_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // --- INICIALIZAÇÃO DO FIREBASE ---
+  // Isso é o que faltava para o login funcionar!
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print("✅ SUCESSO: Firebase Inicializado e Pronto!");
+  } catch (e) {
+    print("❌ ERRO CRÍTICO: Falha ao iniciar Firebase: $e");
+  }
+  // ---------------------------------
+
   runApp(
     MultiProvider(
       providers: [
@@ -35,7 +52,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AgreementProvider()),
         ChangeNotifierProvider(create: (_) => PreferencesProvider()),
       ],
-      // AGORA COMEÇA SEMPRE PELO SPLASH PARA CHECAR O ESTADO REAL
+      // Começa pelo Splash para verificar login
       child: const NexoApp(initialLocation: '/splash'),
     ),
   );
@@ -48,12 +65,13 @@ class NexoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Usando seu PreferencesProvider original para o tema
     final preferences = Provider.of<PreferencesProvider>(context);
 
     final _router = GoRouter(
       initialLocation: initialLocation,
       routes: [
-        // 0. SPLASH (CÉREBRO DA ENTRADA)
+        // 0. SPLASH
         GoRoute(
           path: '/splash',
           builder: (context, state) => const SplashScreen(),
@@ -101,7 +119,6 @@ class NexoApp extends StatelessWidget {
              GoRoute(
               path: 'edit',
               pageBuilder: (context, state) {
-                // final task = state.extra; // Futuramente passaremos a task
                 return _buildPageWithAnimation(
                   context: context, state: state, child: const AddResponsibilityScreen());
               },
@@ -135,9 +152,13 @@ class NexoApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'NEXO',
       debugShowCheckedModeBanner: false,
+      
+      // Tema Original
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: preferences.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      
+      // Configurações de Localização
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

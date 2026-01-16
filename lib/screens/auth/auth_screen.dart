@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // <--- O CARA DO LOGIN
+import 'package:cloud_firestore/cloud_firestore.dart'; // <--- O CARA DO BANCO DE DADOS
 import '../../core/widgets/nexo_loading.dart'; 
 
 class AuthScreen extends StatefulWidget {
@@ -12,30 +14,91 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  bool _isLogin = true; // Alternar entre Login e Cadastro
+  bool _isLogin = true; 
   bool _isLoading = false; 
   
   final _emailController = TextEditingController();
   final _passController = TextEditingController();
   final _nameController = TextEditingController(); 
 
+  // --- FUNÇÃO REAL DE AUTENTICAÇÃO ---
   void _submitAuth() async {
-    setState(() {
-      _isLoading = true; 
-    });
+    final email = _emailController.text.trim();
+    final password = _passController.text.trim();
+    final name = _nameController.text.trim();
 
-    // Simula tempo de processamento
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (mounted) {
-      context.go('/setup-family'); 
+    if (email.isEmpty || password.isEmpty) {
+      _showError("Preencha email e senha.");
+      return;
     }
+
+    setState(() => _isLoading = true);
+
+    try {
+      if (_isLogin) {
+        // --- LOGICA DE LOGIN ---
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: email, 
+          password: password
+        );
+      } else {
+        // --- LOGICA DE CRIAR CONTA (SIGN UP) ---
+        if (name.isEmpty) {
+          _showError("Por favor, diga seu nome.");
+          setState(() => _isLoading = false);
+          return;
+        }
+
+        // 1. Cria o usuário no Authentication (Email/Senha)
+        UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: email, 
+          password: password
+        );
+
+        // 2. Grava os dados na pasta 'users' do Firestore
+        await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
+          'uid': userCredential.user!.uid,
+          'email': email,
+          'name': name,
+          'createdAt': FieldValue.serverTimestamp(),
+          'currentFamilyId': null, // Ainda sem família
+        });
+      }
+
+      // Se não deu erro, navega!
+      if (mounted) {
+        context.go('/setup-family'); 
+      }
+
+    } on FirebaseAuthException catch (e) {
+      // Tratamento de erros comuns
+      String msg = "Ocorreu um erro.";
+      if (e.code == 'weak-password') msg = "A senha é muito fraca.";
+      if (e.code == 'email-already-in-use') msg = "Este e-mail já está cadastrado.";
+      if (e.code == 'invalid-email') msg = "E-mail inválido.";
+      if (e.code == 'user-not-found' || e.code == 'wrong-password') msg = "Email ou senha incorretos."; // Segurança
+      
+      _showError(msg);
+    } catch (e) {
+      _showError("Erro inesperado: $e");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.redAccent,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const NexoLoading(message: "Entrando na sua casa...");
+      return const NexoLoading(message: "Conectando com o servidor...");
     }
 
     final primaryColor = Theme.of(context).primaryColor;
@@ -56,21 +119,20 @@ class _AuthScreenState extends State<AuthScreen> {
                   width: 100,
                   height: 100,
                   decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.1), // Fundo suave
+                    color: primaryColor.withOpacity(0.1), 
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    Icons.grid_view_rounded, // <--- SE TIVER UMA IMAGEM, TROQUE AQUI POR Image.asset('assets/logo.png')
+                    Icons.grid_view_rounded, 
                     size: 50,
                     color: primaryColor,
                   ),
                 ),
               )
               .animate()
-              .scale(duration: 600.ms, curve: Curves.elasticOut), // Efeito elástico ao aparecer
+              .scale(duration: 600.ms, curve: Curves.elasticOut),
 
               const SizedBox(height: 32),
-              // -------------------
 
               // Título
               Text(
@@ -95,7 +157,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
               const SizedBox(height: 48),
 
-              // Campos (Inputs)
+              // Campos
               if (!_isLogin) ...[
                 _buildTextField(label: "Seu Nome", icon: Icons.person_outline, controller: _nameController)
                 .animate().fade().slideX(begin: -0.2, end: 0),
