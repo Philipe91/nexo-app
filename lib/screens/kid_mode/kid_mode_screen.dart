@@ -8,6 +8,8 @@ import '../../core/providers/member_provider.dart';
 import '../../models/member_model.dart';
 import '../../models/task_model.dart';
 import '../../core/widgets/glass_card.dart';
+import '../../core/widgets/xp_progress_bar.dart';
+import '../../core/widgets/level_up_dialog.dart';
 
 class KidModeScreen extends StatefulWidget {
   const KidModeScreen({super.key});
@@ -17,7 +19,7 @@ class KidModeScreen extends StatefulWidget {
 }
 
 class _KidModeScreenState extends State<KidModeScreen> {
-  Member? _selectedKid;
+  String? _selectedKidId; // Mudança: Guardar ID em vez de objeto para evitar dados stale
 
   // Dias da semana para cabeçalho
   final List<String> weekDays = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
@@ -36,6 +38,16 @@ class _KidModeScreenState extends State<KidModeScreen> {
     final members = context.watch<MemberProvider>().members;
     final taskProvider = context.watch<TaskProvider>();
 
+    // Recupera o objeto atualizado do membro selecionado
+    Member? selectedKid;
+    if (_selectedKidId != null) {
+      try {
+        selectedKid = members.firstWhere((m) => m.id == _selectedKidId);
+      } catch (e) {
+        _selectedKidId = null; // Membro removido?
+      }
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF0F4F8), // Fundo clarinho
       body: SafeArea(
@@ -53,7 +65,7 @@ class _KidModeScreenState extends State<KidModeScreen> {
                   const Spacer(),
                   Text(
                     "Modo Criança",
-                    style: GoogleFonts.fredoka( // Fonte mais divertida se tiver
+                    style: GoogleFonts.fredoka( 
                       fontSize: 28, 
                       fontWeight: FontWeight.w600,
                       color: theme.colorScheme.primary,
@@ -66,7 +78,7 @@ class _KidModeScreenState extends State<KidModeScreen> {
             ),
 
             // --- Seleção da Criança ---
-            if (_selectedKid == null) ...[
+            if (selectedKid == null) ...[
               Expanded(
                 child: Center(
                   child: Column(
@@ -91,7 +103,7 @@ class _KidModeScreenState extends State<KidModeScreen> {
                           }
 
                           return GestureDetector(
-                            onTap: () => setState(() => _selectedKid = member),
+                            onTap: () => setState(() => _selectedKidId = member.id),
                             child: Column(
                               children: [
                                 Container(
@@ -126,25 +138,35 @@ class _KidModeScreenState extends State<KidModeScreen> {
               // --- Área de Tarefas da Criança ---
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Row(
+                child: Column(
                   children: [
-                    CircleAvatar(
-                      backgroundColor: Color(int.parse(_selectedKid!.color)),
-                      child: Text(_selectedKid!.name[0], style: const TextStyle(color: Colors.white)),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Row(
                       children: [
-                        Text("Oi, ${_selectedKid!.name}!", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                        Text("Suas missões de hoje ($_todayCode):", style: TextStyle(color: Colors.grey[600])),
+                        CircleAvatar(
+                          backgroundColor: Color(int.parse(selectedKid.color)),
+                          child: Text(selectedKid.name[0], style: const TextStyle(color: Colors.white)),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("Oi, ${selectedKid.name}!", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                            Text("Suas missões de hoje ($_todayCode):", style: TextStyle(color: Colors.grey[600])),
+                          ],
+                        ),
+                        const Spacer(),
+                        TextButton(
+                          onPressed: () => setState(() => _selectedKidId = null),
+                          child: const Text("Trocar"),
+                        )
                       ],
                     ),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: () => setState(() => _selectedKid = null),
-                      child: const Text("Trocar"),
-                    )
+                    const SizedBox(height: 20),
+                    // --- BARRA DE XP ---
+                    XpProgressBar(
+                      currentXp: selectedKid.xp,
+                      level: selectedKid.level,
+                    ),
                   ],
                 ),
               ),
@@ -154,7 +176,7 @@ class _KidModeScreenState extends State<KidModeScreen> {
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.all(16),
-                  children: _buildKidTasks(taskProvider),
+                  children: _buildKidTasks(taskProvider, selectedKid),
                 ),
               ),
             ]
@@ -164,12 +186,12 @@ class _KidModeScreenState extends State<KidModeScreen> {
     );
   }
 
-  List<Widget> _buildKidTasks(TaskProvider provider) {
+  List<Widget> _buildKidTasks(TaskProvider taskProvider, Member kid) {
     // Filtra tarefas que:
     // 1. O 'whoExecutes' é a criança selecionada
     // 2. A tarefa está marcada para o dia de hoje (contains _todayCode)
-    final myTasks = provider.tasks.where((t) {
-      return t.whoExecutes == _selectedKid!.name && 
+    final myTasks = taskProvider.tasks.where((t) {
+      return t.whoExecutes == kid.name && 
              t.days.contains(_todayCode);
     }).toList();
 
@@ -196,13 +218,32 @@ class _KidModeScreenState extends State<KidModeScreen> {
           color: Colors.white,
           opacity: 1.0,
           onTap: () {
-            // CORREÇÃO AQUI: Passamos 'task.id' em vez de 'task'
-            provider.toggleTaskCompletion(task.id); 
+            // Ação de Completar
+            final wasCompleted = taskProvider.toggleTaskCompletion(task.id);
             
-            if (!isDone) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("✨ Mandou bem! +XP Ganho!"), backgroundColor: Colors.amber),
-              );
+            if (wasCompleted) {
+              // Calcula XP (Ex: Effort 1 = 50, 2 = 100, 3 = 150)
+              final xpEarned = task.effort * 50;
+              
+              // Adiciona XP no membro
+              final leveledUp = context.read<MemberProvider>().addXp(kid.id, xpEarned);
+
+              if (leveledUp) {
+                // Mostra Dialog de Level Up
+                showDialog(
+                  context: context, 
+                  builder: (_) => LevelUpDialog(newLevel: kid.level + 1) // Próximo Nível (simplificado)
+                );
+              } else {
+                // Snack simples
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("✨ Mandou bem! +$xpEarned XP"), 
+                    backgroundColor: Colors.amber,
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              }
             }
           },
           child: Padding(
@@ -238,7 +279,7 @@ class _KidModeScreenState extends State<KidModeScreen> {
                         ),
                       ),
                       Text(
-                        "${task.effort} Pontos de Energia",
+                        "${task.effort} Pontos de Energia (+${task.effort * 50} XP)",
                         style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
                       ),
                     ],

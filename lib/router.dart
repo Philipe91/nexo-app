@@ -12,6 +12,10 @@ import 'screens/responsibilities/add_responsibility_screen.dart';
 import 'screens/members/members_screen.dart';
 import 'screens/agreements/agreements_screen.dart';
 import 'screens/cycle/cycle_settings_screen.dart';
+import 'screens/kid_mode/kid_mode_screen.dart'; 
+import 'screens/shopping/shopping_list_screen.dart'; // <--- Import Novo
+import 'screens/shopping/meal_planner_screen.dart'; // <--- Import Novo
+import 'screens/checkin/checkin_screen.dart'; // <--- Import Novo
 
 // Configuração Centralizada de Rotas
 GoRouter createAppRouter({String initialLocation = '/splash'}) {
@@ -94,6 +98,34 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
         path: '/cycle-settings',
         pageBuilder: (context, state) => _buildPageWithAnimation(
           context: context, state: state, child: const CycleSettingsScreen()), 
+      ),
+
+      // 9. MODO CRIANÇA (GAMIFICAÇÃO)
+      GoRoute(
+        path: '/kid-mode',
+        pageBuilder: (context, state) => _buildPageWithAnimation(
+          context: context, state: state, child: const KidModeScreen()), 
+      ),
+
+      // 10. LISTA DE COMPRAS
+      GoRoute(
+        path: '/shopping',
+        pageBuilder: (context, state) => _buildPageWithAnimation(
+          context: context, state: state, child: const ShoppingListScreen()), 
+      ),
+
+      // 11. PLANEJAMENTO DE REFEIÇÕES
+      GoRoute(
+        path: '/meals',
+        pageBuilder: (context, state) => _buildPageWithAnimation(
+          context: context, state: state, child: const MealPlannerScreen()), 
+      ),
+
+      // 12. CHECK-IN SEMANAL
+      GoRoute(
+        path: '/checkin',
+        pageBuilder: (context, state) => _buildPageWithAnimation(
+          context: context, state: state, child: const CheckInScreen()), 
       ),
     ],
   );

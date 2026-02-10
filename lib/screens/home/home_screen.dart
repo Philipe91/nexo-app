@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/task_provider.dart';
 import '../../core/providers/member_provider.dart';
-import '../../core/providers/cycle_provider.dart'; // <--- Import Obrigatório
+import '../../core/providers/cycle_provider.dart';
 import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/app_drawer.dart';
 
@@ -16,10 +16,9 @@ class HomeScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final taskProvider = context.watch<TaskProvider>();
     final memberProvider = context.watch<MemberProvider>();
-    final cycleProvider = context.watch<CycleProvider>(); // <--- Escuta o Ciclo
+    final cycleProvider = context.watch<CycleProvider>();
 
     final totalLoad = taskProvider.totalMentalLoad;
-    final members = memberProvider.members;
 
     // --- Lógica de Cores do Status ---
     String statusText = "Equilibrada";
@@ -46,7 +45,6 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        // Menu Lateral (Avatar)
         leading: Builder(
           builder: (context) => IconButton(
             icon: CircleAvatar(
@@ -66,7 +64,6 @@ class HomeScreen extends StatelessWidget {
           )
         ),
         actions: [
-          // --- AQUI ESTÁ O CORAÇÃO (BIO-RITMO) ---
           IconButton(
              icon: const Icon(Icons.favorite_outline, color: Colors.pinkAccent),
              onPressed: () => context.push('/cycle-settings'),
@@ -106,93 +103,50 @@ class HomeScreen extends StatelessWidget {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Carga Mental', style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.bold)),
-                                Text(statusText, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: statusColor)),
+                                Text(statusText.toUpperCase(), 
+                                  style: TextStyle(
+                                    fontSize: 12, 
+                                    fontWeight: FontWeight.bold, 
+                                    color: statusColor.withOpacity(0.8),
+                                    letterSpacing: 1.2
+                                  )
+                                ),
+                                const SizedBox(height: 4),
+                                Text("${totalLoad.toInt()} pts", 
+                                  style: TextStyle(
+                                    fontSize: 32, 
+                                    fontWeight: FontWeight.w900, 
+                                    color: Colors.blueGrey.shade800
+                                  )
+                                ),
                               ],
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                              child: Row(
+                            // Gráfico Circular Simples
+                            SizedBox(
+                              height: 60, width: 60,
+                              child: Stack(
+                                alignment: Alignment.center,
                                 children: [
-                                  Icon(Icons.auto_graph, size: 16, color: statusColor),
-                                  const SizedBox(width: 4),
-                                  Text('$totalLoad pts', style: TextStyle(fontWeight: FontWeight.bold, color: statusColor)),
+                                  CircularProgressIndicator(
+                                    value: totalLoad / 100,
+                                    strokeWidth: 8,
+                                    backgroundColor: Colors.grey.shade200,
+                                    valueColor: AlwaysStoppedAnimation(gradientStart),
+                                  ),
+                                  Icon(Icons.bolt, color: gradientStart)
                                 ],
                               ),
                             )
                           ],
                         ),
-                        const SizedBox(height: 20),
-                        Container(
-                          height: 12,
-                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), color: Colors.grey.shade100),
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              double percent = (totalLoad / 40).clamp(0.0, 1.0);
-                              return Align(
-                                alignment: Alignment.centerLeft,
-                                child: Container(
-                                  width: constraints.maxWidth * percent,
-                                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), gradient: LinearGradient(colors: [gradientStart, gradientEnd])),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
                       ],
                     ),
                   ),
                 ),
-
+                
                 const SizedBox(height: 24),
-
-                // 2. BIO-RITMO (CARD NOVO) - Só aparece se tiver dados configurados
-                ...members.map((member) {
-                  final info = cycleProvider.getCurrentPhaseInfo(member.id);
-                  if (info.isEmpty) return const SizedBox.shrink(); // Não mostra se não configurou
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: GlassCard(
-                      color: Colors.white,
-                      opacity: 0.95,
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border(left: BorderSide(color: info['color'], width: 6)),
-                        ),
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(info['icon'], color: info['color']),
-                                const SizedBox(width: 8),
-                                Text("Bio-Ritmo: ${member.name}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(info['phase'], style: TextStyle(color: info['color'], fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 4),
-                            Text(
-                              "💡 Dica: ${info['tip']}",
-                              style: TextStyle(fontSize: 13, color: Colors.grey.shade700, fontStyle: FontStyle.italic),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-
-                const SizedBox(height: 16),
                 
-                // 3. GRID DE AÇÕES
-                const Text("Acesso Rápido", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-                
+                // 2. AÇÕES RÁPIDAS (Grid)
                 GridView.count(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -203,55 +157,12 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     _buildGridCard(context, icon: Icons.calendar_month_rounded, color: Colors.blue, title: "Planejamento", subtitle: "Semanal", onTap: () => context.push('/planning')),
                     _buildGridCard(context, icon: Icons.sports_esports_rounded, color: Colors.purple, title: "Modo Filho", subtitle: "Gamificação", onTap: () => context.push('/kid-mode')),
+                    _buildGridCard(context, icon: Icons.shopping_cart_rounded, color: Colors.green, title: "Compras", subtitle: "Lista Inteligente", onTap: () => context.push('/shopping')),
+                    _buildGridCard(context, icon: Icons.restaurant_menu_rounded, color: Colors.orangeAccent, title: "Refeições", subtitle: "Cardápio Semanal", onTap: () => context.push('/meals')),
                     _buildGridCard(context, icon: Icons.bolt_rounded, color: Colors.orange, title: "Check-in", subtitle: "Avaliar Semana", onTap: () => context.push('/checkin')),
                     _buildGridCard(context, icon: Icons.handshake_rounded, color: Colors.pink, title: "Acordos", subtitle: "Regras da Casa", onTap: () => context.push('/agreements')),
                   ],
                 ),
-                
-                const SizedBox(height: 32),
-
-                // 4. LISTA DE TAREFAS
-                InkWell(
-                  onTap: () => context.push('/responsibilities'),
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.grey.shade200),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))]
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(color: theme.colorScheme.primary.withOpacity(0.1), shape: BoxShape.circle),
-                          child: Icon(Icons.list_alt_rounded, color: theme.colorScheme.primary),
-                        ),
-                        const SizedBox(width: 16),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Lista de Tarefas", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                              Text("Ver todas as responsabilidades", style: TextStyle(fontSize: 12, color: Colors.grey)),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => context.push('/responsibilities/add'),
-                          icon: Container(
-                            decoration: BoxDecoration(color: theme.colorScheme.primary, shape: BoxShape.circle),
-                            padding: const EdgeInsets.all(8),
-                            child: const Icon(Icons.add, color: Colors.white, size: 20),
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -262,28 +173,25 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildGridCard(BuildContext context, {required IconData icon, required Color color, required String title, required String subtitle, required VoidCallback onTap}) {
     return GlassCard(
+      opacity: 0.5,
       onTap: onTap,
-      color: Colors.white,
-      opacity: 0.8,
-      borderRadius: BorderRadius.circular(20),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
               child: Icon(icon, color: color, size: 28),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                Text(subtitle, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-              ],
-            )
+            const Spacer(),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 12)),
           ],
         ),
       ),
@@ -291,8 +199,11 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-extension BlurEffect on Container {
+extension on Container {
   Widget blur(double sigma) {
-    return ImageFiltered(imageFilter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma), child: this);
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+      child: this,
+    );
   }
 }

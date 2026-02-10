@@ -80,7 +80,7 @@ class TaskProvider extends ChangeNotifier {
   }
 
   // --- NOVO: COMPLETAR/DESCOMPLETAR TAREFA (CHECK) ---
-  void toggleTaskCompletion(String taskId) {
+  bool toggleTaskCompletion(String taskId) {
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index >= 0) {
       final task = _tasks[index];
@@ -95,6 +95,8 @@ class TaskProvider extends ChangeNotifier {
             last.day == now.day;
       }
 
+      final bool isCompleting = !isDoneToday; // Se não fez, está completando agora
+
       // Se já fez hoje, "desfaz" (null). Se não fez, marca hoje.
       final updatedTask = Task(
         id: task.id,
@@ -106,13 +108,46 @@ class TaskProvider extends ChangeNotifier {
         frequency: task.frequency,
         days: task.days,
         createdAt: task.createdAt,
-        lastCompletedDate: isDoneToday ? null : now, // Toggle data
+        lastCompletedDate: isCompleting ? now : null, 
       );
 
       _tasks[index] = updatedTask;
       saveTasks();
       notifyListeners();
+      
+      return isCompleting;
     }
+    return false;
+  }
+
+  void reassignTask(String taskId, String newMemberId) {
+    final index = _tasks.indexWhere((t) => t.id == taskId);
+    if (index >= 0) {
+      final task = _tasks[index];
+      // Atualiza quem executa. O Model espera String, não List<String>.
+      final updatedTask = Task(
+        id: task.id,
+        title: task.title,
+        whoRemembers: newMemberId, // Corrigido: String
+        whoDecides: newMemberId,   // Corrigido: String
+        whoExecutes: newMemberId,  // Corrigido: String
+        effort: task.effort,
+        frequency: task.frequency,
+        days: task.days,
+        createdAt: task.createdAt,
+        lastCompletedDate: task.lastCompletedDate,
+      );
+      _tasks[index] = updatedTask;
+      saveTasks();
+      notifyListeners();
+    }
+  }
+
+  // Helper para o Check-in
+  int getMemberMentalLoad(String memberId) {
+    final memberTasks = _tasks.where((t) => t.whoExecutes == memberId || t.whoRemembers == memberId || t.whoDecides == memberId);
+    if (memberTasks.isEmpty) return 0;
+    return memberTasks.fold(0, (sum, t) => sum + t.effort);
   }
 
   void removeTask(String id) {

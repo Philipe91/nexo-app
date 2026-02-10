@@ -25,7 +25,63 @@ class MemberProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- NOVO: ATUALIZAR MEMBRO ---
+  // --- NOVO: GAMIFICATION ---
+  
+  bool addXp(String memberId, int amount) {
+    bool leveledUp = false;
+    final index = _members.indexWhere((m) => m.id == memberId);
+    if (index >= 0) {
+      final member = _members[index];
+      int newXp = member.xp + amount;
+      int newLevel = _calculateLevel(newXp);
+
+      // Verifica se subiu de nível
+      if (newLevel > member.level) {
+        leveledUp = true;
+        print("🎉 LEVEL UP! ${member.name} subiu para o nível $newLevel!");
+      }
+
+      _members[index] = Member(
+        id: member.id,
+        name: member.name,
+        color: member.color,
+        xp: newXp,
+        level: newLevel,
+        badges: member.badges,
+      );
+      saveMembers();
+      notifyListeners();
+    }
+    return leveledUp;
+  }
+
+  void unlockBadge(String memberId, String badgeId) {
+    final index = _members.indexWhere((m) => m.id == memberId);
+    if (index >= 0) {
+      final member = _members[index];
+      if (!member.badges.contains(badgeId)) {
+        final newBadges = List<String>.from(member.badges)..add(badgeId);
+        _members[index] = Member(
+          id: member.id,
+          name: member.name,
+          color: member.color,
+          xp: member.xp,
+          level: member.level,
+          badges: newBadges,
+        );
+        saveMembers();
+        notifyListeners();
+      }
+    }
+  }
+
+  int _calculateLevel(int xp) {
+    // Fórmula simples: Nível = 1 + (XP / 1000)
+    // Ex: 0-999 = Lvl 1, 1000-1999 = Lvl 2
+    return 1 + (xp ~/ 1000);
+  }
+
+  // --- ATUALIZAR MEMBRO GENÉRICO ---
   void updateMember(Member updatedMember) {
     final index = _members.indexWhere((m) => m.id == updatedMember.id);
     if (index >= 0) {
