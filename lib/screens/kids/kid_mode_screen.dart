@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/task_provider.dart';
 import '../../core/providers/member_provider.dart';
-import '../../models/member_model.dart';
+import '../../core/models/member_model.dart';
 import '../../models/task_model.dart';
 
 class KidModeScreen extends StatefulWidget {

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../core/providers/member_provider.dart';
 import '../../core/providers/cycle_provider.dart';
-import '../../models/member_model.dart';
+import '../../core/models/member_model.dart';
 import '../../core/widgets/glass_card.dart';
 
 class CycleSettingsScreen extends StatefulWidget {

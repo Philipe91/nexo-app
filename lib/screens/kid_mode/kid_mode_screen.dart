@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/providers/task_provider.dart';
 import '../../core/providers/member_provider.dart';
-import '../../models/member_model.dart';
+import '../../core/models/member_model.dart';
 import '../../models/task_model.dart';
 import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/xp_progress_bar.dart';

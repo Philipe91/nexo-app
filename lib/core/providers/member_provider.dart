@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../models/member_model.dart';
+import '../models/member_model.dart';
 
 class MemberProvider extends ChangeNotifier {
   List<Member> _members = [];
@@ -15,10 +15,15 @@ class MemberProvider extends ChangeNotifier {
   // --- AÇÕES ---
 
   void addMember(String name, String color) {
+    final newId = DateTime.now().millisecondsSinceEpoch.toString();
     final newMember = Member(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: newId,
+      userId: newId, // Local ID as userID for now
+      familyId: 'local_family',
       name: name,
+      role: 'child', // Defaulting to child for local adds? Or adult?
       color: color,
+      joinedAt: DateTime.now(),
     );
     _members.add(newMember);
     saveMembers();
@@ -43,8 +48,12 @@ class MemberProvider extends ChangeNotifier {
 
       _members[index] = Member(
         id: member.id,
+        userId: member.userId,
+        familyId: member.familyId,
         name: member.name,
+        role: member.role,
         color: member.color,
+        joinedAt: member.joinedAt,
         xp: newXp,
         level: newLevel,
         badges: member.badges,
@@ -63,8 +72,12 @@ class MemberProvider extends ChangeNotifier {
         final newBadges = List<String>.from(member.badges)..add(badgeId);
         _members[index] = Member(
           id: member.id,
+          userId: member.userId,
+          familyId: member.familyId,
           name: member.name,
+          role: member.role,
           color: member.color,
+          joinedAt: member.joinedAt,
           xp: member.xp,
           level: member.level,
           badges: newBadges,
