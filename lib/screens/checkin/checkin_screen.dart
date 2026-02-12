@@ -6,7 +6,7 @@ import 'package:fl_chart/fl_chart.dart'; // Para gráficos
 import '../../core/providers/task_provider.dart';
 import '../../core/providers/member_provider.dart';
 import '../../models/task_model.dart';
-import '../../models/member_model.dart';
+import '../../core/models/member_model.dart';
 import '../../core/widgets/glass_card.dart';
 
 class CheckInScreen extends StatelessWidget {

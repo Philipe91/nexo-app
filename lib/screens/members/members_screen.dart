@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/member_provider.dart';
-import '../../models/member_model.dart';
+import '../../core/models/member_model.dart';
 import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/empty_state.dart'; // <--- Import Novo
 
@@ -99,8 +99,15 @@ class _MembersScreenState extends State<MembersScreen> {
                     if (memberToEdit != null) {
                       final updated = Member(
                         id: memberToEdit.id,
+                        userId: memberToEdit.userId,
+                        familyId: memberToEdit.familyId,
                         name: _nameController.text,
+                        role: memberToEdit.role,
                         color: _selectedColor,
+                        joinedAt: memberToEdit.joinedAt,
+                        xp: memberToEdit.xp,
+                        level: memberToEdit.level,
+                        badges: memberToEdit.badges,
                       );
                       context.read<MemberProvider>().updateMember(updated);
                     } else {

@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import '../../core/providers/shopping_provider.dart';
 import '../../core/providers/member_provider.dart';
 import '../../models/meal_model.dart';
-import '../../models/member_model.dart';
+import '../../core/models/member_model.dart';
 import '../../core/widgets/glass_card.dart';
 
 class MealPlannerScreen extends StatefulWidget {
