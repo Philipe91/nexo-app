@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/task_model.dart';
+import '../services/notification_service.dart'; // <--- Import Novo
 
 class TaskProvider extends ChangeNotifier {
   List<Task> _tasks = [];
@@ -52,6 +53,8 @@ class TaskProvider extends ChangeNotifier {
     required int effort,
     required String frequency,
     required List<String> days,
+    DateTime? scheduledTime,
+    bool notifyAtTime = false,
   }) {
     final newTask = Task(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -63,11 +66,26 @@ class TaskProvider extends ChangeNotifier {
       frequency: frequency,
       days: days,
       createdAt: DateTime.now(),
+      scheduledTime: scheduledTime,
+      notifyAtTime: notifyAtTime,
     );
 
     _tasks.add(newTask);
     saveTasks();
     notifyListeners();
+
+    // Agendar Notificação
+    if (notifyAtTime && scheduledTime != null) {
+      // Usamos o hashCode do ID como ID da notificação (convertendo string para int seguro)
+      int notificationId = int.parse(newTask.id.substring(newTask.id.length - 8)); 
+      
+      NotificationService().scheduleNotification(
+        id: notificationId,
+        title: "Hora de: ${newTask.title}",
+        body: "Ei $whoExecutes, sua tarefa te espera!",
+        scheduledDate: scheduledTime,
+      );
+    }
   }
 
   void updateTask(Task updatedTask) {
@@ -76,6 +94,21 @@ class TaskProvider extends ChangeNotifier {
       _tasks[index] = updatedTask;
       saveTasks();
       notifyListeners();
+
+      // Cancelar e/ou Reagendar
+      // Usa os últimos 8 dígitos do ID como ID da notificação
+      int notificationId = int.parse(updatedTask.id.substring(updatedTask.id.length - 8));
+      
+      NotificationService().cancelNotification(notificationId);
+
+      if (updatedTask.notifyAtTime && updatedTask.scheduledTime != null) {
+         NotificationService().scheduleNotification(
+          id: notificationId,
+          title: "Hora de: ${updatedTask.title}",
+          body: "Ei ${updatedTask.whoExecutes}, sua tarefa te espera!",
+          scheduledDate: updatedTask.scheduledTime!,
+        );
+      }
     }
   }
 
@@ -108,7 +141,9 @@ class TaskProvider extends ChangeNotifier {
         frequency: task.frequency,
         days: task.days,
         createdAt: task.createdAt,
-        lastCompletedDate: isCompleting ? now : null, 
+        lastCompletedDate: isCompleting ? now : null,
+        scheduledTime: task.scheduledTime,
+        notifyAtTime: task.notifyAtTime, 
       );
 
       _tasks[index] = updatedTask;
@@ -136,6 +171,8 @@ class TaskProvider extends ChangeNotifier {
         days: task.days,
         createdAt: task.createdAt,
         lastCompletedDate: task.lastCompletedDate,
+        scheduledTime: task.scheduledTime,
+        notifyAtTime: task.notifyAtTime,
       );
       _tasks[index] = updatedTask;
       saveTasks();
@@ -154,6 +191,12 @@ class TaskProvider extends ChangeNotifier {
     _tasks.removeWhere((task) => task.id == id);
     saveTasks();
     notifyListeners();
+    
+    // Cancelar notificação associada
+    if (id.length >= 8) {
+       int notificationId = int.parse(id.substring(id.length - 8));
+       NotificationService().cancelNotification(notificationId);
+    }
   }
 
   // --- PERSISTÊNCIA ---

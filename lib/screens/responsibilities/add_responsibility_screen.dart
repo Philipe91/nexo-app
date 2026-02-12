@@ -26,6 +26,10 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
   int esforco = 1;
   List<String> selectedDays = []; // <--- Lista de dias selecionados
 
+  // --- Novos Campos para Notificação ---
+  bool _notifyAtTime = false;
+  TimeOfDay? _selectedTime;
+
   final List<String> frequencias = ["Diário", "Semanal", "Mensal", "Eventual"];
   // Códigos dos dias para salvar no banco
   final List<String> weekDays = [
@@ -60,6 +64,12 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
             esforco = t.effort;
             frequencia = t.frequency;
             selectedDays = List.from(t.days); // Carrega os dias salvos
+            
+            // Carregar Notificação
+            _notifyAtTime = t.notifyAtTime;
+            if (t.scheduledTime != null) {
+              _selectedTime = TimeOfDay.fromDateTime(t.scheduledTime!);
+            }
           } else {
             quemLembra = members.first;
             quemDecide = members.length > 1 ? members[1] : members.first;
@@ -234,7 +244,7 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
 
             const SizedBox(height: 24),
 
-            // --- SELEÇÃO DE DIAS (NOVO COMPONENTE UI) ---
+            // --- SELEÇÃO DE DIAS ---
             const Text("Quais dias isso acontece?",
                 style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
@@ -263,6 +273,36 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
                 );
               }).toList(),
             ),
+            
+            const SizedBox(height: 24),
+            const Divider(),
+
+            // --- NOTIFICAÇÕES (NOVA UI) ---
+            SwitchListTile(
+              title: const Text("Notificar no horário?", style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text("Receba um lembrete no celular"),
+              value: _notifyAtTime,
+              activeColor: theme.colorScheme.primary,
+              onChanged: (val) => setState(() => _notifyAtTime = val),
+            ),
+
+            if (_notifyAtTime)
+              ListTile(
+                title: Text(
+                  _selectedTime?.format(context) ?? "Escolher horário",
+                  style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+                leading: Icon(Icons.alarm, color: theme.colorScheme.primary),
+                tileColor: theme.colorScheme.primary.withOpacity(0.1),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                onTap: () async {
+                  final time = await showTimePicker(
+                    context: context, 
+                    initialTime: _selectedTime ?? TimeOfDay.now(),
+                  );
+                  if (time != null) setState(() => _selectedTime = time);
+                },
+              ),
 
             const SizedBox(height: 40),
 
@@ -320,6 +360,19 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
         title = widget.taskToEdit!.title;
       }
 
+      // Preparar Data Agendada
+      DateTime? scheduledDateTime;
+      if (_notifyAtTime && _selectedTime != null) {
+        final now = DateTime.now();
+        scheduledDateTime = DateTime(now.year, now.month, now.day, _selectedTime!.hour, _selectedTime!.minute);
+        // Se já passou hoje, agenda para agorinha ou amanhã? 
+        // Por simplicidade, assumimos a data e hora compostas. 
+        // O Service vai tentar agendar. Se for passado, dispara na hora ou falha dependendo da config.
+        if (scheduledDateTime.isBefore(now)) {
+           scheduledDateTime = scheduledDateTime.add(const Duration(days: 1));
+        }
+      }
+
       if (widget.taskToEdit != null) {
         final updatedTask = Task(
           id: widget.taskToEdit!.id,
@@ -331,6 +384,9 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
           frequency: frequencia,
           days: selectedDays, // <--- SALVA DIAS
           createdAt: widget.taskToEdit!.createdAt,
+          // Novos Campos
+          notifyAtTime: _notifyAtTime,
+          scheduledTime: scheduledDateTime,
         );
         context.read<TaskProvider>().updateTask(updatedTask);
       } else {
@@ -342,6 +398,9 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
               effort: esforco,
               frequency: frequencia,
               days: selectedDays, // <--- SALVA DIAS
+              // Novos Campos
+              notifyAtTime: _notifyAtTime,
+              scheduledTime: scheduledDateTime,
             );
       }
       context.pop();

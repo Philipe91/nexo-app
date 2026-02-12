@@ -13,7 +13,8 @@ import 'core/providers/member_provider.dart';
 import 'core/providers/cycle_provider.dart';
 import 'core/providers/agreement_provider.dart';
 import 'core/providers/preferences_provider.dart';
-import 'core/providers/shopping_provider.dart'; // <--- Import Novo
+import 'core/providers/shopping_provider.dart';
+import 'core/services/notification_service.dart'; // <--- Import Novo
 
 // --- ARQUIVO GERADO PELO FLUTTERFIRE ---
 import 'firebase_options.dart'; 
@@ -27,6 +28,13 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     print("✅ SUCESSO: Firebase Inicializado!");
+
+    // --- INICIALIZAÇÃO DAS NOTIFICAÇÕES ---
+    final notificationService = NotificationService();
+    await notificationService.init();
+    await notificationService.requestPermissions();
+    print("✅ SUCESSO: Notificações Inicializadas!");
+
   } catch (e) {
     print("❌ ERRO NO FIREBASE: $e");
   }
