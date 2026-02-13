@@ -124,11 +124,11 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                     width: 60,
                     margin: const EdgeInsets.symmetric(horizontal: 6),
                     decoration: BoxDecoration(
-                      color: isSelected ? Colors.orange : Colors.white,
+                      color: isSelected ? const Color(0xFF4E5AE8) : Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         if (isSelected) 
-                          BoxShadow(color: Colors.orange.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 4))
+                          BoxShadow(color: const Color(0xFF4E5AE8).withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 4))
                       ]
                     ),
                     child: Column(
@@ -153,7 +153,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                 _buildMealCard(
                   title: "Almoço",
                   icon: Icons.sunny,
-                  color: Colors.orange,
+                  color: const Color(0xFFFFD740), // Amarelo Accent (Moon Heart) em vez de Orange
                   meal: lunch.id.isNotEmpty ? lunch : null,
                   onAdd: () => _addMealDialog(context, "Almoço"),
                   members: memberProvider.members,
@@ -163,7 +163,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                 _buildMealCard(
                   title: "Jantar",
                   icon: Icons.nightlight_round,
-                  color: Colors.indigo,
+                  color: const Color(0xFF4E5AE8), // Indigo Primary
                   meal: dinner.id.isNotEmpty ? dinner : null,
                   onAdd: () => _addMealDialog(context, "Jantar"),
                   members: memberProvider.members,

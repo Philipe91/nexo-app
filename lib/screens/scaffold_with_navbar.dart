@@ -40,6 +40,9 @@ class ScaffoldWithNavBar extends StatelessWidget {
             selectedIndex: navigationShell.currentIndex,
             onDestinationSelected: (int index) => _onTap(context, index),
             labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+            labelTextStyle: MaterialStateProperty.all(
+              const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12)
+            ),
             destinations: const <NavigationDestination>[
               NavigationDestination(
                 icon: Icon(Icons.home_outlined, color: Colors.white70),

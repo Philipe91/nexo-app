@@ -38,7 +38,7 @@ class XpProgressBar extends StatelessWidget {
               style: GoogleFonts.fredoka(
                 fontSize: 16, 
                 fontWeight: FontWeight.bold, 
-                color: Colors.white
+                color: const Color(0xFF4E5AE8) // Azul Visível
               ),
             ),
             Text(
@@ -46,7 +46,7 @@ class XpProgressBar extends StatelessWidget {
               style: GoogleFonts.fredoka(
                 fontSize: 14, 
                 fontWeight: FontWeight.w500, 
-                color: Colors.white.withOpacity(0.9)
+                color: Colors.grey.shade600 // Cinza para o XP
               ),
             ),
           ],

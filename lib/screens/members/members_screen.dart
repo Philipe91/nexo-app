@@ -43,57 +43,82 @@ class _MembersScreenState extends State<MembersScreen> {
         builder: (context, setDialogState) {
           final theme = Theme.of(context);
           return AlertDialog(
-            title: Text(memberToEdit != null ? "Editar Membro" : "Novo Membro"),
-            content: Column(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            backgroundColor: Colors.white,
+            title: Text(memberToEdit != null ? "Editar Membro" : "Novo Membro", 
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF2D3142)),
+              textAlign: TextAlign.center,
+            ),
+            content:  Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: "Nome / Apelido",
-                    border: OutlineInputBorder(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  textCapitalization: TextCapitalization.words,
+                  child: TextField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: "Nome ou Apelido",
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      prefixIcon: Icon(Icons.person_outline_rounded, color: Colors.grey),
+                    ),
+                    textCapitalization: TextCapitalization.words,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 
-                const Align(alignment: Alignment.centerLeft, child: Text("Cor do Avatar", style: TextStyle(fontWeight: FontWeight.bold))),
+                const Align(
+                  alignment: Alignment.centerLeft, 
+                  child: Text("Escolha uma cor", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.grey))
+                ),
                 const SizedBox(height: 12),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: _colorOptions.map((color) {
-                    String colorString = "0x${color.value.toRadixString(16).toUpperCase()}";
-                    bool isSelected = _selectedColor == colorString;
-                    
-                    return GestureDetector(
-                      onTap: () {
-                        setDialogState(() {
-                          _selectedColor = colorString;
-                        });
-                      },
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                          border: isSelected ? Border.all(color: theme.colorScheme.onSurface, width: 3) : null,
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)],
+                Center(
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    alignment: WrapAlignment.center,
+                    children: _colorOptions.map((color) {
+                      String colorString = "0x${color.value.toRadixString(16).toUpperCase()}";
+                      bool isSelected = _selectedColor == colorString;
+                      
+                      return GestureDetector(
+                        onTap: () {
+                          setDialogState(() {
+                            _selectedColor = colorString;
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: isSelected ? 48 : 40,
+                          height: isSelected ? 48 : 40,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                            border: isSelected ? Border.all(color: Colors.white, width: 3) : Border.all(color: Colors.transparent, width: 2),
+                            boxShadow: [
+                              if(isSelected) BoxShadow(color: color.withOpacity(0.5), blurRadius: 10, offset: const Offset(0, 4))
+                            ],
+                          ),
+                          child: isSelected ? const Icon(Icons.check_rounded, color: Colors.white) : null,
                         ),
-                        child: isSelected ? const Icon(Icons.check, color: Colors.white) : null,
-                      ),
-                    );
-                  }).toList(),
+                      );
+                    }).toList(),
+                  ),
                 )
               ],
             ),
+            actionsAlignment: MainAxisAlignment.center,
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text("Cancelar"),
+                child: const Text("Cancelar", style: TextStyle(color: Colors.grey)),
               ),
-              FilledButton(
+              ElevatedButton(
                 onPressed: () {
                   if (_nameController.text.isNotEmpty) {
                     if (memberToEdit != null) {
@@ -119,7 +144,13 @@ class _MembersScreenState extends State<MembersScreen> {
                     Navigator.pop(context);
                   }
                 },
-                child: Text(memberToEdit != null ? "Salvar" : "Adicionar"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4E5AE8),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                child: Text(memberToEdit != null ? "Salvar Alterações" : "Adicionar"),
               ),
             ],
           );
@@ -154,81 +185,131 @@ class _MembersScreenState extends State<MembersScreen> {
     final members = context.watch<MemberProvider>().members;
 
     return Scaffold(
-      extendBodyBehindAppBar: true, // Efeito bonito no topo
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text("Gerenciar Membros", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("Membros", style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 1.2)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onBackground),
-          onPressed: () => context.pop(),
-        ),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showMemberDialog(),
-        label: const Text("Novo Membro"),
-        icon: const Icon(Icons.person_add),
-        backgroundColor: theme.colorScheme.primary,
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF4E5AE8), Color(0xFF8E9EFE)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF4E5AE8).withOpacity(0.4),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: FloatingActionButton.extended(
+          onPressed: () => _showMemberDialog(),
+          label: const Text("Novo Membro", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+          icon: const Icon(Icons.person_add, color: Colors.white),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
       ),
       body: Stack(
         children: [
           // Fundo base
-          Container(color: theme.colorScheme.background),
+          Container(color: const Color(0xFFF8F9FE)),
+
+          // Header Curvo
+          Container(
+            height: 200,
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF4E5AE8), Color(0xFF8E9EFE)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
+            ),
+            child: Stack(
+              children: [
+                 Positioned(top: -50, right: -50, child: CircleAvatar(radius: 80, backgroundColor: Colors.white.withOpacity(0.1))),
+                 Positioned(bottom: 20, left: -20, child: CircleAvatar(radius: 60, backgroundColor: Colors.white.withOpacity(0.1))),
+              ],
+            ),
+          ),
           
           SafeArea(
-            child: members.isEmpty
-                ? const EmptyState(
-                    icon: Icons.group_off_rounded,
-                    title: "Nenhum membro ainda",
-                    message: "Adicione as pessoas da sua família para começar a dividir as tarefas.",
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(20),
-                    itemCount: members.length,
-                    itemBuilder: (context, index) {
-                      final member = members[index];
-                      Color avatarColor;
-                      try {
-                        avatarColor = Color(int.parse(member.color));
-                      } catch (e) {
-                        avatarColor = Colors.grey;
-                      }
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+                Expanded(
+                  child: members.isEmpty
+                      ? const EmptyState(
+                          icon: Icons.group_off_rounded,
+                          title: "Nenhum membro ainda",
+                          message: "Adicione as pessoas da sua família para começar a dividir as tarefas.",
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                          itemCount: members.length,
+                          itemBuilder: (context, index) {
+                            final member = members[index];
+                            Color avatarColor;
+                            try {
+                              avatarColor = Color(int.parse(member.color));
+                            } catch (e) {
+                              avatarColor = Colors.grey;
+                            }
 
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        // GlassCard limpo (sem cor fixa) para adaptar ao tema
-                        child: GlassCard(
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            leading: CircleAvatar(
-                              radius: 24,
-                              backgroundColor: avatarColor.withOpacity(0.2),
-                              child: Text(
-                                member.name.isNotEmpty ? member.name[0].toUpperCase() : "?",
-                                style: TextStyle(fontWeight: FontWeight.bold, color: avatarColor, fontSize: 20),
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: GlassCard(
+                                opacity: 1.0,
+                                borderRadius: BorderRadius.circular(24),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                    leading: Container(
+                                      width: 50, height: 50,
+                                      decoration: BoxDecoration(
+                                        color: avatarColor.withOpacity(0.15),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        member.name.isNotEmpty ? member.name[0].toUpperCase() : "?",
+                                        style: TextStyle(fontWeight: FontWeight.w900, color: avatarColor, fontSize: 22),
+                                      ),
+                                    ),
+                                    title: Text(member.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF2D3142))),
+                                    subtitle: Text("Nível ${member.level} • ${member.xp} XP", style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.edit_rounded, color: Colors.grey),
+                                          onPressed: () => _showMemberDialog(memberToEdit: member),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                                          onPressed: () => _confirmDelete(member),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                            title: Text(member.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                            subtitle: Text("Membro da Família", style: TextStyle(fontSize: 12, color: theme.textTheme.bodySmall?.color)),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit, color: Colors.blueGrey),
-                                  onPressed: () => _showMemberDialog(memberToEdit: member),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                  onPressed: () => _confirmDelete(member),
-                                ),
-                              ],
-                            ),
-                          ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

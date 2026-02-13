@@ -50,6 +50,7 @@ class _ResponsibilitiesScreenState extends State<ResponsibilitiesScreen> {
         label: const Text("Nova Tarefa"),
         icon: const Icon(Icons.add),
         backgroundColor: theme.colorScheme.primary,
+        foregroundColor: Colors.white, // Garante texto branco
       ),
       body: Stack(
         children: [
