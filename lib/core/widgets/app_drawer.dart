@@ -86,7 +86,7 @@ class AppDrawer extends StatelessWidget {
                       IconButton(
                         onPressed: () {
                           context.pop();
-                          context.push('/members');
+                          context.go('/members');
                         },
                         icon: const Icon(Icons.add_circle_outline),
                       )
@@ -109,7 +109,7 @@ class AppDrawer extends StatelessWidget {
                   title: const Text("Gerenciar Membros"),
                   onTap: () {
                     context.pop();
-                    context.push('/members');
+                    context.go('/members');
                   },
                 ),
                 

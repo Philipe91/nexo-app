@@ -73,14 +73,32 @@ class HomeScreen extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          // Fundo Ambiente
+          // Fundo com Gradiente
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFE0F7FA), // Cyan Claro
+                    Color(0xFFE1BEE7), // Roxo Claro
+                    Color(0xFFF3E5F5), // Roxo Mais Claro
+                  ],
+                  stops: [0.0, 0.5, 1.0],
+                ),
+              ),
+            ),
+          ),
+          
+          // Bolhas de fundo
           Positioned(
             top: -100, left: -50,
-            child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blue.shade50)).blur(60),
+            child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blue.withOpacity(0.3))).blur(80),
           ),
           Positioned(
             top: 100, right: -50,
-            child: Container(width: 200, height: 200, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.purple.shade50)).blur(60),
+            child: Container(width: 200, height: 200, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.purple.withOpacity(0.3))).blur(80),
           ),
           
           SafeArea(
@@ -157,7 +175,7 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     _buildGridCard(context, icon: Icons.calendar_month_rounded, color: Colors.blue, title: "Planejamento", subtitle: "Semanal", onTap: () => context.push('/planning')),
                     _buildGridCard(context, icon: Icons.sports_esports_rounded, color: Colors.purple, title: "Modo Filho", subtitle: "Gamificação", onTap: () => context.push('/kid-mode')),
-                    _buildGridCard(context, icon: Icons.shopping_cart_rounded, color: Colors.green, title: "Compras", subtitle: "Lista Inteligente", onTap: () => context.push('/shopping')),
+                    // Compras removido daqui pois já está na barra inferior
                     _buildGridCard(context, icon: Icons.restaurant_menu_rounded, color: Colors.orangeAccent, title: "Refeições", subtitle: "Cardápio Semanal", onTap: () => context.push('/meals')),
                     _buildGridCard(context, icon: Icons.bolt_rounded, color: Colors.orange, title: "Check-in", subtitle: "Avaliar Semana", onTap: () => context.push('/checkin')),
                     _buildGridCard(context, icon: Icons.handshake_rounded, color: Colors.pink, title: "Acordos", subtitle: "Regras da Casa", onTap: () => context.push('/agreements')),

@@ -16,10 +16,18 @@ import 'screens/kid_mode/kid_mode_screen.dart';
 import 'screens/shopping/shopping_list_screen.dart'; // <--- Import Novo
 import 'screens/shopping/meal_planner_screen.dart'; // <--- Import Novo
 import 'screens/checkin/checkin_screen.dart'; // <--- Import Novo
+import 'screens/scaffold_with_navbar.dart'; // <--- Import Novo para Navbar
+import 'screens/planning/weekly_planning_screen.dart'; // <--- Import Novo
+import 'screens/settings/settings_screen.dart'; // <--- Import Novo
 
 // Configuração Centralizada de Rotas
+// Configuração Centralizada de Rotas
 GoRouter createAppRouter({String initialLocation = '/splash'}) {
+  final rootNavigatorKey = GlobalKey<NavigatorState>();
+  final sectionNavigatorKey = GlobalKey<NavigatorState>();
+
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: initialLocation,
     routes: [
       // 0. SPLASH (Inicialização)
@@ -49,46 +57,80 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
           context: context, state: state, child: const FamilySetupScreen()),
       ),
 
-      // 4. HOME (DASHBOARD)
-      GoRoute(
-        path: '/',
-        pageBuilder: (context, state) => _buildPageWithAnimation(
-          context: context, state: state, child: const HomeScreen()),
-      ),
-
-      // 5. RESPONSABILIDADES
-      GoRoute(
-        path: '/responsibilities',
-        pageBuilder: (context, state) => _buildPageWithAnimation(
-          context: context, state: state, child: const ResponsibilitiesScreen()),
-        routes: [
-          GoRoute(
-            path: 'add',
-            pageBuilder: (context, state) => _buildPageWithAnimation(
-              context: context, state: state, child: const AddResponsibilityScreen()),
+      // ROTAS COM BARRA DE NAVEGAÇÃO (SHELL)
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return ScaffoldWithNavBar(navigationShell: navigationShell);
+        },
+        branches: [
+          // BRANCH 1: HOME
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/',
+                pageBuilder: (context, state) => _buildPageWithAnimation(
+                  context: context, state: state, child: const HomeScreen()),
+              ),
+            ],
           ),
-           GoRoute(
-            path: 'edit',
-            pageBuilder: (context, state) {
-              // TODO: Passar o objeto Task via state.extra se necessário para edição
-              // final task = state.extra as Task?;
-              return _buildPageWithAnimation(
-                context: context, state: state, child: const AddResponsibilityScreen());
-            },
+
+          // BRANCH 2: RESPONSABILIDADES
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/responsibilities',
+                pageBuilder: (context, state) => _buildPageWithAnimation(
+                  context: context, state: state, child: const ResponsibilitiesScreen()),
+                routes: [
+                  GoRoute(
+                    path: 'add',
+                    parentNavigatorKey: rootNavigatorKey, // Esconde a navbar
+                    pageBuilder: (context, state) => _buildPageWithAnimation(
+                      context: context, state: state, child: const AddResponsibilityScreen()),
+                  ),
+                   GoRoute(
+                    path: 'edit',
+                    parentNavigatorKey: rootNavigatorKey, // Esconde a navbar
+                    pageBuilder: (context, state) {
+                      return _buildPageWithAnimation(
+                        context: context, state: state, child: const AddResponsibilityScreen());
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          // BRANCH 3: SHOPPING
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/shopping',
+                pageBuilder: (context, state) => _buildPageWithAnimation(
+                  context: context, state: state, child: const ShoppingListScreen()), 
+              ),
+            ],
+          ),
+
+          // BRANCH 4: MEMBROS
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/members',
+                pageBuilder: (context, state) => _buildPageWithAnimation(
+                  context: context, state: state, child: const MembersScreen()),
+              ),
+            ],
           ),
         ],
       ),
 
-      // 6. MEMBROS
-      GoRoute(
-        path: '/members',
-        pageBuilder: (context, state) => _buildPageWithAnimation(
-          context: context, state: state, child: const MembersScreen()),
-      ),
-
+      // OUTRAS ROTAS (Sem barra de navegação)
+      
       // 7. ACORDOS
       GoRoute(
         path: '/agreements',
+        parentNavigatorKey: rootNavigatorKey,
         pageBuilder: (context, state) => _buildPageWithAnimation(
           context: context, state: state, child: const AgreementsScreen()),
       ),
@@ -96,6 +138,7 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
       // 8. CICLO (CORAÇÃO)
       GoRoute(
         path: '/cycle-settings',
+        parentNavigatorKey: rootNavigatorKey,
         pageBuilder: (context, state) => _buildPageWithAnimation(
           context: context, state: state, child: const CycleSettingsScreen()), 
       ),
@@ -103,29 +146,44 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
       // 9. MODO CRIANÇA (GAMIFICAÇÃO)
       GoRoute(
         path: '/kid-mode',
+        parentNavigatorKey: rootNavigatorKey,
         pageBuilder: (context, state) => _buildPageWithAnimation(
           context: context, state: state, child: const KidModeScreen()), 
       ),
 
-      // 10. LISTA DE COMPRAS
-      GoRoute(
-        path: '/shopping',
-        pageBuilder: (context, state) => _buildPageWithAnimation(
-          context: context, state: state, child: const ShoppingListScreen()), 
-      ),
+      // 10. LISTA DE COMPRAS - MOVED TO SHELL BUT KEEPING HERE AS FALLBACK IF NEEDED OR REMOVING
+      // (Já está no Shell)
 
       // 11. PLANEJAMENTO DE REFEIÇÕES
       GoRoute(
         path: '/meals',
+        parentNavigatorKey: rootNavigatorKey,
         pageBuilder: (context, state) => _buildPageWithAnimation(
           context: context, state: state, child: const MealPlannerScreen()), 
+      ),
+
+      // 13. PLANEJAMENTO SEMANAL (Faltava esta rota!)
+      GoRoute(
+        path: '/planning',
+        parentNavigatorKey: rootNavigatorKey,
+        pageBuilder: (context, state) => _buildPageWithAnimation(
+          context: context, state: state, child: const WeeklyPlanningScreen()), 
       ),
 
       // 12. CHECK-IN SEMANAL
       GoRoute(
         path: '/checkin',
+        parentNavigatorKey: rootNavigatorKey,
         pageBuilder: (context, state) => _buildPageWithAnimation(
           context: context, state: state, child: const CheckInScreen()), 
+      ),
+
+      // 14. CONFIGURAÇÕES (Faltava esta rota!)
+      GoRoute(
+        path: '/settings',
+        parentNavigatorKey: rootNavigatorKey,
+        pageBuilder: (context, state) => _buildPageWithAnimation(
+          context: context, state: state, child: const SettingsScreen()), 
       ),
     ],
   );
