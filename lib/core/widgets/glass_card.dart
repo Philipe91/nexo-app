@@ -1,10 +1,9 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class GlassCard extends StatelessWidget {
   final Widget child;
-  final double blur;
-  final double opacity;
+  final double blur;        // Mantido para compatibilidade, mas ignorado no novo design
+  final double opacity;     // Mantido para compatibilidade
   final Color? color;
   final BorderRadius? borderRadius;
   final VoidCallback? onTap;
@@ -12,9 +11,9 @@ class GlassCard extends StatelessWidget {
   const GlassCard({
     super.key,
     required this.child,
-    this.blur = 10.0,
-    this.opacity = 0.1, // Opacidade padrão
-    this.color,         // Se null, vamos decidir baseado no tema
+    this.blur = 0.0,
+    this.opacity = 1.0,
+    this.color,
     this.borderRadius,
     this.onTap,
   });
@@ -23,46 +22,34 @@ class GlassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
-    // Define a cor base automaticamente se não for passada
-    final baseColor = color ?? (isDark ? Colors.black : Colors.white);
-    
-    // Ajusta a borda para ser sutil em ambos os modos
-    final borderColor = isDark 
-        ? Colors.white.withOpacity(0.05) 
-        : Colors.white.withOpacity(0.4);
 
-    final radius = borderRadius ?? BorderRadius.circular(16);
+    final radius = borderRadius ?? BorderRadius.circular(24);
+    
+    // Cor de fundo: Branco (light) ou Surface Escura (dark)
+    final backgroundColor = color ?? (isDark ? theme.colorScheme.surface : Colors.white);
 
-    return ClipRRect(
-      borderRadius: radius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: radius,
-            child: Container(
-              decoration: BoxDecoration(
-                // Usa a cor base com a opacidade definida
-                color: baseColor.withOpacity(isDark ? 0.6 : 0.7), 
-                borderRadius: radius,
-                border: Border.all(
-                  color: borderColor,
-                  width: 1.0,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
-                    blurRadius: 10,
-                    spreadRadius: -2,
-                  )
-                ]
-              ),
-              child: child,
-            ),
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: radius,
+        // Sombra suave e colorida (Moon Heart style)
+        boxShadow: [
+          BoxShadow(
+            color: isDark 
+                ? Colors.black.withOpacity(0.3) 
+                : const Color(0xFF4E5AE8).withOpacity(0.08), // Sombra azulada bem leve
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+            spreadRadius: 0,
+          )
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: radius,
+          child: child, // O child já vem com padding na maioria dos casos ou é ajustado pelo pai
         ),
       ),
     );

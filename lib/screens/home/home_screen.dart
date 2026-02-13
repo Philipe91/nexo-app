@@ -47,19 +47,19 @@ class HomeScreen extends StatelessWidget {
         elevation: 0,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: CircleAvatar(
+            icon: const CircleAvatar(
               backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: theme.colorScheme.primary),
+              child: Icon(Icons.person, color: Color(0xFF4E5AE8)), // Azul Moon Heart
             ),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
         centerTitle: true,
-        title: Text(
+        title: const Text(
           'NEXO', 
           style: TextStyle(
             fontWeight: FontWeight.w900, 
-            color: theme.colorScheme.primary,
+            color: Colors.white, // Branco para contrastar com o Header Azul
             letterSpacing: 2,
           )
         ),
@@ -71,75 +71,62 @@ class HomeScreen extends StatelessWidget {
            )
         ],
       ),
-      body: Stack(
+      body: Column(
         children: [
-          // Fundo com Gradiente
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFFE0F7FA), // Cyan Claro
-                    Color(0xFFE1BEE7), // Roxo Claro
-                    Color(0xFFF3E5F5), // Roxo Mais Claro
-                  ],
-                  stops: [0.0, 0.5, 1.0],
-                ),
+          // Header Curvo com Gradiente
+          Container(
+            height: 280, // Altura suficiente para AppBar + Status
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF4E5AE8), Color(0xFF8E9EFE)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
             ),
-          ),
-          
-          // Bolhas de fundo
-          Positioned(
-            top: -100, left: -50,
-            child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.blue.withOpacity(0.3))).blur(80),
-          ),
-          Positioned(
-            top: 100, right: -50,
-            child: Container(width: 200, height: 200, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.purple.withOpacity(0.3))).blur(80),
-          ),
-          
-          SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Stack(
               children: [
-                const SizedBox(height: 10),
+                // Decoração de Bolhas sutis
+                Positioned(top: -50, left: -50, child: CircleAvatar(radius: 80, backgroundColor: Colors.white.withOpacity(0.1))),
+                Positioned(bottom: 20, right: -20, child: CircleAvatar(radius: 60, backgroundColor: Colors.white.withOpacity(0.1))),
                 
-                // 1. STATUS GERAL
-                GlassCard(
-                  opacity: 0.9,
-                  borderRadius: BorderRadius.circular(24),
+                // Conteúdo do Header (Status)
+                SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      children: [
-                        Row(
+                    padding: const EdgeInsets.fromLTRB(24, 60, 24, 0), // Espaço para AppBar
+                    child: GlassCard(
+                      color: Colors.white,
+                      opacity: 0.85, // Um pouco mais translúcido para o efeito glass
+                      borderRadius: BorderRadius.circular(24),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(statusText.toUpperCase(), 
+                                Text("CARGA MENTAL", 
                                   style: TextStyle(
-                                    fontSize: 12, 
+                                    fontSize: 10, 
                                     fontWeight: FontWeight.bold, 
-                                    color: statusColor.withOpacity(0.8),
-                                    letterSpacing: 1.2
+                                    color: Colors.grey.shade500,
+                                    letterSpacing: 1.0
                                   )
                                 ),
                                 const SizedBox(height: 4),
-                                Text("${totalLoad.toInt()} pts", 
+                                Text(statusText, 
                                   style: TextStyle(
-                                    fontSize: 32, 
-                                    fontWeight: FontWeight.w900, 
-                                    color: Colors.blueGrey.shade800
+                                    fontSize: 18, 
+                                    fontWeight: FontWeight.bold, 
+                                    color: statusColor
                                   )
                                 ),
                               ],
                             ),
-                            // Gráfico Circular Simples
+                            // Indicador Circular
                             SizedBox(
                               height: 60, width: 60,
                               child: Stack(
@@ -147,40 +134,55 @@ class HomeScreen extends StatelessWidget {
                                 children: [
                                   CircularProgressIndicator(
                                     value: totalLoad / 100,
-                                    strokeWidth: 8,
-                                    backgroundColor: Colors.grey.shade200,
-                                    valueColor: AlwaysStoppedAnimation(gradientStart),
+                                    strokeWidth: 6,
+                                    backgroundColor: Colors.grey.shade100,
+                                    valueColor: AlwaysStoppedAnimation(statusColor),
+                                    strokeCap: StrokeCap.round,
                                   ),
-                                  Icon(Icons.bolt, color: gradientStart)
+                                  Text("${totalLoad.toInt()}", 
+                                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)
+                                  ),
                                 ],
                               ),
                             )
                           ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
+              ],
+            ),
+          ),
+
+          // Lista de Ações (Grid)
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              children: [
+                Text("O que vamos fazer?", 
+                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)
+                ),
+                const SizedBox(height: 16),
                 
-                const SizedBox(height: 24),
-                
-                // 2. AÇÕES RÁPIDAS (Grid)
                 GridView.count(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisCount: 2,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
-                  childAspectRatio: 1.1,
+                  childAspectRatio: 1.0, // Quadrado
                   children: [
-                    _buildGridCard(context, icon: Icons.calendar_month_rounded, color: Colors.blue, title: "Planejamento", subtitle: "Semanal", onTap: () => context.push('/planning')),
-                    _buildGridCard(context, icon: Icons.sports_esports_rounded, color: Colors.purple, title: "Modo Filho", subtitle: "Gamificação", onTap: () => context.push('/kid-mode')),
-                    // Compras removido daqui pois já está na barra inferior
-                    _buildGridCard(context, icon: Icons.restaurant_menu_rounded, color: Colors.orangeAccent, title: "Refeições", subtitle: "Cardápio Semanal", onTap: () => context.push('/meals')),
-                    _buildGridCard(context, icon: Icons.bolt_rounded, color: Colors.orange, title: "Check-in", subtitle: "Avaliar Semana", onTap: () => context.push('/checkin')),
-                    _buildGridCard(context, icon: Icons.handshake_rounded, color: Colors.pink, title: "Acordos", subtitle: "Regras da Casa", onTap: () => context.push('/agreements')),
+                    _buildGridCard(context, icon: Icons.calendar_month_rounded, color: const Color(0xFF4E5AE8), title: "Planejamento", subtitle: "Semanal", onTap: () => context.push('/planning')),
+                    _buildGridCard(context, icon: Icons.sports_esports_rounded, color: Colors.purpleAccent, title: "Modo Filho", subtitle: "Gamificação", onTap: () => context.push('/kid-mode')),
+                    _buildGridCard(context, icon: Icons.restaurant_menu_rounded, color: Colors.orange, title: "Refeições", subtitle: "Cardápio", onTap: () => context.push('/meals')),
+                    _buildGridCard(context, icon: Icons.bolt_rounded, color: Colors.amber, title: "Check-in", subtitle: "Avaliar", onTap: () => context.push('/checkin')),
+                    
+                    // Coloquei o Acordos aqui, mas se quiser pode ser outra coisa
+                     _buildGridCard(context, icon: Icons.handshake_rounded, color: Colors.pinkAccent, title: "Acordos", subtitle: "Regras", onTap: () => context.push('/agreements')),
                   ],
                 ),
+                const SizedBox(height: 100), // Espaço para o FAB ou BottomNav não cobrir
               ],
             ),
           ),

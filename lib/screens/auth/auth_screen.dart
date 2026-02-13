@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -101,137 +102,176 @@ class _AuthScreenState extends State<AuthScreen> {
       return const NexoLoading(message: "Conectando com o servidor...");
     }
 
-    final primaryColor = Theme.of(context).primaryColor;
+    final theme = Theme.of(context);
+    final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              
-              // --- ÁREA DA LOGO ---
-              Center(
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.1), 
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.grid_view_rounded, 
-                    size: 50,
-                    color: primaryColor,
-                  ),
-                ),
-              )
-              .animate()
-              .scale(duration: 600.ms, curve: Curves.elasticOut),
-
-              const SizedBox(height: 32),
-
-              // Título
-              Text(
-                _isLogin ? "Bem-vindo ao NEXO" : "Crie sua conta",
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ).animate().fade().slideY(begin: -0.5, end: 0, delay: 200.ms),
-              
-              const SizedBox(height: 8),
-              
-              Text(
-                _isLogin 
-                  ? "Sua carga mental organizada." 
-                  : "Comece a dividir as tarefas hoje.",
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(fontSize: 16, color: Colors.grey),
-              ).animate().fade(delay: 300.ms),
-
-              const SizedBox(height: 48),
-
-              // Campos
-              if (!_isLogin) ...[
-                _buildTextField(label: "Seu Nome", icon: Icons.person_outline, controller: _nameController)
-                .animate().fade().slideX(begin: -0.2, end: 0),
-                const SizedBox(height: 16),
-              ],
-              
-              _buildTextField(label: "E-mail", icon: Icons.email_outlined, controller: _emailController)
-              .animate().fade(delay: 100.ms).slideX(begin: -0.2, end: 0),
-              
-              const SizedBox(height: 16),
-              
-              _buildTextField(label: "Senha", icon: Icons.lock_outline, controller: _passController, isPassword: true)
-              .animate().fade(delay: 200.ms).slideX(begin: -0.2, end: 0),
-
-              const SizedBox(height: 32),
-
-              // Botão Principal
-              ElevatedButton(
-                onPressed: _submitAuth,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 5,
-                ),
-                child: Text(
-                  _isLogin ? "ENTRAR" : "CRIAR CONTA",
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-              ).animate().scale(delay: 400.ms),
-
-              const SizedBox(height: 24),
-
-              // Alternar Login/Cadastro
-              TextButton(
-                onPressed: () => setState(() => _isLogin = !_isLogin),
-                child: RichText(
-                  text: TextSpan(
-                    text: _isLogin ? "Não tem conta? " : "Já tem conta? ",
-                    style: TextStyle(color: Colors.grey[600], fontFamily: GoogleFonts.inter().fontFamily),
-                    children: [
-                      TextSpan(
-                        text: _isLogin ? "Cadastre-se" : "Faça Login",
-                        style: TextStyle(
-                          color: primaryColor, 
-                          fontWeight: FontWeight.bold
-                        ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF4E5AE8), Color(0xFF8E9EFE)], // Moon Heart Gradient
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  
+                  // --- LOGO ANIMADA ---
+                  Center(
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2), 
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))
+                        ]
                       ),
-                    ],
+                      child: const Icon(
+                        Icons.grid_view_rounded, 
+                        size: 50,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                  .animate()
+                  .scale(duration: 800.ms, curve: Curves.elasticOut),
+
+                  const SizedBox(height: 48),
+
+                  // Títulos
+                  Text(
+                    _isLogin ? "Bem-vindo" : "Nova Conta",
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.nunito(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ).animate().fade().slideY(begin: 0.3, end: 0, delay: 200.ms),
+                  
+                  const SizedBox(height: 8),
+                  
+                  Text(
+                    _isLogin 
+                      ? "Faça login para continuar" 
+                      : "Junte-se ao NEXO hoje",
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.nunito(fontSize: 16, color: Colors.white70),
+                  ).animate().fade(delay: 300.ms),
+
+                  const SizedBox(height: 48),
+
+                  // Campos
+                  if (!_isLogin) ...[
+                    _buildMoonInput(label: "Seu Nome", icon: Icons.person_outline, controller: _nameController)
+                    .animate().fade().slideY(begin: 0.2, end: 0),
+                    const SizedBox(height: 16),
+                  ],
+                  
+                  _buildMoonInput(label: "E-mail", icon: Icons.email_outlined, controller: _emailController)
+                  .animate().fade(delay: 100.ms).slideY(begin: 0.2, end: 0),
+                  
+                  const SizedBox(height: 16),
+                  
+                  _buildMoonInput(label: "Senha", icon: Icons.lock_outline, controller: _passController, isPassword: true)
+                  .animate().fade(delay: 200.ms).slideY(begin: 0.2, end: 0),
+
+                  const SizedBox(height: 40),
+
+                  // Botão Branco (Estilo Moon Heart)
+                  ElevatedButton(
+                    onPressed: _submitAuth,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      backgroundColor: Colors.white,
+                      foregroundColor: theme.primaryColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      elevation: 8,
+                      shadowColor: Colors.black.withOpacity(0.2),
+                    ),
+                    child: Text(
+                      _isLogin ? "ENTRAR" : "CRIAR CONTA",
+                      style: GoogleFonts.nunito(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ).animate().scale(delay: 400.ms),
+
+                  const SizedBox(height: 24),
+
+                  // Alternar Login/Cadastro
+                  TextButton(
+                    onPressed: () => setState(() => _isLogin = !_isLogin),
+                    child: RichText(
+                      text: TextSpan(
+                        text: _isLogin ? "Ainda não tem conta? " : "Já possui conta? ",
+                        style: GoogleFonts.nunito(color: Colors.white70),
+                        children: [
+                          TextSpan(
+                            text: _isLogin ? "Cadastre-se" : "Entrar",
+                            style: const TextStyle(
+                              color: Colors.white, 
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                              decorationColor: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTextField({
+  Widget _buildMoonInput({
     required String label, 
     required IconData icon, 
     required TextEditingController controller,
     bool isPassword = false
   }) {
-    return TextField(
-      controller: controller,
-      obscureText: isPassword,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        filled: true,
-        fillColor: Colors.grey[50],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1), // Menos opacidade para mostrar o blur
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.2)), // Borda sutil
+          ),
+          child: TextField(
+            controller: controller,
+            obscureText: isPassword,
+            style: const TextStyle(color: Colors.white),
+            cursorColor: Colors.white,
+            decoration: InputDecoration(
+              filled: false, // Importante para o efeito glass funcionar (não usar o branco do tema)
+              labelText: label,
+              labelStyle: const TextStyle(color: Colors.white70),
+              prefixIcon: Icon(icon, color: Colors.white70),
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+              floatingLabelBehavior: FloatingLabelBehavior.auto,
+            ),
+          ),
+        ),
       ),
     );
   }

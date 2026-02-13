@@ -14,31 +14,56 @@ class ScaffoldWithNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: navigationShell,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: (int index) => _onTap(context, index),
-        destinations: const <NavigationDestination>[
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Início',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF4E5AE8), Color(0xFF8E9EFE)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          NavigationDestination(
-            icon: Icon(Icons.list_alt_outlined),
-            selectedIcon: Icon(Icons.list_alt),
-            label: 'Tarefas',
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+          child: NavigationBar(
+            height: 70, 
+            elevation: 0,
+            backgroundColor: Colors.transparent, // Transparente para mostrar o gradiente do Container
+            indicatorColor: Colors.white.withOpacity(0.2), // Indicador sutil
+            selectedIndex: navigationShell.currentIndex,
+            onDestinationSelected: (int index) => _onTap(context, index),
+            labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+            destinations: const <NavigationDestination>[
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined, color: Colors.white70),
+                selectedIcon: Icon(Icons.home_rounded, color: Colors.white),
+                label: 'Início',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.list_alt_outlined, color: Colors.white70),
+                selectedIcon: Icon(Icons.list_alt_rounded, color: Colors.white),
+                label: 'Tarefas',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.shopping_cart_outlined, color: Colors.white70),
+                selectedIcon: Icon(Icons.shopping_cart_rounded, color: Colors.white),
+                label: 'Compras',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.people_outline, color: Colors.white70),
+                selectedIcon: Icon(Icons.people_rounded, color: Colors.white),
+                label: 'Membros',
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(Icons.shopping_cart_outlined),
-            selectedIcon: Icon(Icons.shopping_cart),
-            label: 'Compras',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people),
-            label: 'Membros',
-          ),
-        ],
+        ),
       ),
     );
   }
