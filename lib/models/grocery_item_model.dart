@@ -36,4 +36,21 @@ class GroceryItem {
       addedBy: map['addedBy'] ?? '',
     );
   }
+  GroceryItem copyWith({
+    String? id,
+    String? name,
+    String? category,
+    bool? isCompleted,
+    int? quantity,
+    String? addedBy,
+  }) {
+    return GroceryItem(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      category: category ?? this.category,
+      isCompleted: isCompleted ?? this.isCompleted,
+      quantity: quantity ?? this.quantity,
+      addedBy: addedBy ?? this.addedBy,
+    );
+  }
 }

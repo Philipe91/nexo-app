@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/providers/shopping_provider.dart';
 import '../../models/grocery_item_model.dart';
 import '../../core/widgets/glass_card.dart';
@@ -15,12 +16,14 @@ class ShoppingListScreen extends StatefulWidget {
 
 class _ShoppingListScreenState extends State<ShoppingListScreen> {
   final TextEditingController _itemController = TextEditingController();
+  final FocusNode _inputFocus = FocusNode();
 
   void _addItem() {
     if (_itemController.text.isNotEmpty) {
-      // Por enquanto, "addedBy" é fixo "Eu" (melhorar com Auth depois)
       context.read<ShoppingProvider>().addItem(_itemController.text, "Eu");
       _itemController.clear();
+      // Manter foco para adicionar vários itens rapido
+      _inputFocus.requestFocus(); 
     }
   }
 
@@ -32,104 +35,167 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     final completedItems = provider.items.where((i) => i.isCompleted).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA), // Fundo suave
+      backgroundColor: const Color(0xFFF2F2F7), // iOS Background Color style
       appBar: AppBar(
-        title: Text("Lista de Compras", style: GoogleFonts.fredoka(color: Colors.black87)),
-        backgroundColor: Colors.white,
+        title: Text("Compras", style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 24, color: Colors.black)),
+        centerTitle: false,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_sweep_rounded, color: Colors.grey),
-            onPressed: () => provider.clearCompleted(),
-            tooltip: "Limpar concluídos",
-          )
+          if (completedItems.isNotEmpty)
+            TextButton(
+              onPressed: () => provider.clearCompleted(),
+              child: const Text("Limpar Feitos", style: TextStyle(color: Colors.red)),
+            )
         ],
       ),
       body: Column(
         children: [
-          // --- Input Rápido ---
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.white,
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _itemController,
-                    decoration: InputDecoration(
-                      hintText: "Adicionar item (ex: Leite)",
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-                    ),
-                    onSubmitted: (_) => _addItem(),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                FloatingActionButton.small(
-                  onPressed: _addItem,
-                  backgroundColor: theme.colorScheme.primary,
-                  child: const Icon(Icons.add),
-                ),
-              ],
-            ),
-          ),
-
-          // --- Sugestões Rápidas ---
-          SizedBox(
-            height: 50,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              children: provider.suggestedItems.map((suggestion) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ActionChip(
-                    label: Text(suggestion),
-                    backgroundColor: Colors.white,
-                    onPressed: () => provider.addItem(suggestion, "Eu"),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-
+          // --- Lista de Itens ---
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               children: [
                 if (items.isEmpty && completedItems.isEmpty)
-                  Center(
+                   Center(
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 50),
+                      padding: const EdgeInsets.only(top: 100),
                       child: Column(
                         children: [
-                          const Icon(Icons.shopping_basket_outlined, size: 64, color: Colors.grey),
+                          Icon(Icons.checklist_rtl_rounded, size: 80, color: Colors.grey.shade300),
                           const SizedBox(height: 16),
-                          Text("Lista vazia!", style: GoogleFonts.inter(color: Colors.grey)),
+                          Text("Sua lista está vazia", style: TextStyle(color: Colors.grey.shade500, fontSize: 18)),
                         ],
                       ),
                     ),
                   ),
 
-                // --- Itens Pendentes ---
-                ...items.map((item) => _buildGroceryItem(item, provider)),
+                // Seção: Pendentes
+                if (items.isNotEmpty) ...[
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 8, left: 4),
+                    child: Text("A COMPRAR", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: List.generate(items.length, (index) {
+                        final item = items[index];
+                        return Column(
+                          children: [
+                            if (index > 0) const Divider(height: 1, indent: 48),
+                            _buildItemRow(item, provider, theme),
+                          ],
+                        );
+                      }),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
 
+                // Seção: Sugestões (Chips)
+                if (items.length < 5) ...[ // Só mostra sugestões se a lista não estiver gigante
+                   SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: provider.suggestedItems
+                          // Filtra sugestões que já estão na lista (pendente ou completa)
+                          .where((sug) => !provider.items.any((i) => i.name.toLowerCase() == sug.toLowerCase()))
+                          .map((suggestion) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ActionChip(
+                            avatar: const Icon(Icons.add, size: 14),
+                            label: Text(suggestion),
+                            backgroundColor: Colors.white,
+                            elevation: 0,
+                            side: BorderSide(color: Colors.grey.shade300),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            onPressed: () => provider.addItem(suggestion, "Eu"),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
+                // Seção: Concluídos
                 if (completedItems.isNotEmpty) ...[
                   const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Divider(),
+                    padding: EdgeInsets.only(bottom: 8, left: 4),
+                    child: Text("CONCLUÍDO", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
                   ),
-                  Text("Concluídos", style: GoogleFonts.inter(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  // --- Itens Concluídos ---
-                  ...completedItems.map((item) => _buildGroceryItem(item, provider)),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: List.generate(completedItems.length, (index) {
+                        final item = completedItems[index];
+                        return Column(
+                          children: [
+                            if (index > 0) const Divider(height: 1, indent: 48),
+                            _buildItemRow(item, provider, theme),
+                          ],
+                        );
+                      }),
+                    ),
+                  ),
+                  const SizedBox(height: 100), // Espaço para input fixo
                 ]
+              ],
+            ),
+          ),
+          
+          // --- Input Fixo no Rodapé ---
+          Container(
+            padding: EdgeInsets.only(
+              left: 16, 
+              right: 16, 
+              top: 12, 
+              bottom: MediaQuery.of(context).viewInsets.bottom + 12
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))
+              ]
+            ),
+            child: Row(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.add, color: Colors.blue),
+                    onPressed: _addItem,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _itemController,
+                    focusNode: _inputFocus,
+                    decoration: const InputDecoration(
+                      hintText: "Novo item...",
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                      filled: false,
+                    ),
+                    style: const TextStyle(fontSize: 18),
+                    onSubmitted: (_) => _addItem(),
+                    textCapitalization: TextCapitalization.sentences,
+                  ),
+                ),
               ],
             ),
           ),
@@ -138,7 +204,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     );
   }
 
-  Widget _buildGroceryItem(GroceryItem item, ShoppingProvider provider) {
+  Widget _buildItemRow(GroceryItem item, ShoppingProvider provider, ThemeData theme) {
     return Dismissible(
       key: Key(item.id),
       direction: DismissDirection.endToStart,
@@ -148,36 +214,42 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
         padding: const EdgeInsets.only(right: 20),
         child: const Icon(Icons.delete, color: Colors.white),
       ),
-      onDismissed: (_) {
-        provider.removeItem(item.id);
-      },
-      child: Card(
-        elevation: 0,
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: item.isCompleted ? BorderSide.none : BorderSide(color: Colors.grey.shade300),
-        ),
-        color: item.isCompleted ? Colors.grey[100] : Colors.white,
-        child: ListTile(
-          leading: Checkbox(
-            value: item.isCompleted,
-            activeColor: Colors.green,
-            shape: const CircleBorder(),
-            onChanged: (_) => provider.toggleItem(item.id),
-          ),
-          title: Text(
-            item.name,
-            style: TextStyle(
-              fontSize: 16,
-              decoration: item.isCompleted ? TextDecoration.lineThrough : null,
-              color: item.isCompleted ? Colors.grey : Colors.black87,
+      onDismissed: (_) => provider.removeItem(item.id),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: GestureDetector(
+          onTap: () => provider.toggleItem(item.id),
+          child: AnimatedContainer(
+            duration: 200.ms,
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: item.isCompleted ? theme.colorScheme.primary : Colors.transparent,
+              border: Border.all(
+                color: item.isCompleted ? theme.colorScheme.primary : Colors.grey.shade400,
+                width: 2
+              ),
             ),
-          ),
-          trailing: item.category != 'Geral' 
-              ? Chip(label: Text(item.category, style: const TextStyle(fontSize: 10)), visualDensity: VisualDensity.compact) 
+            child: item.isCompleted 
+              ? const Icon(Icons.check, size: 16, color: Colors.white) 
               : null,
+          ),
         ),
+        title: Text(
+          item.name,
+          style: TextStyle(
+            fontSize: 17,
+            color: item.isCompleted ? Colors.grey : Colors.black87,
+            decoration: item.isCompleted ? TextDecoration.lineThrough : null,
+          ),
+        ),
+        trailing: item.category != 'Geral' 
+            ? Text(
+                item.category, 
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade500)
+              ) 
+            : null,
       ),
     );
   }

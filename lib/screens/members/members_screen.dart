@@ -16,6 +16,11 @@ class MembersScreen extends StatefulWidget {
 class _MembersScreenState extends State<MembersScreen> {
   final _nameController = TextEditingController();
   String _selectedColor = "0xFF4D5BCE"; 
+  String _selectedRelationship = "Outro";
+
+  final List<String> _relationshipOptions = [
+    "Pai", "Mãe", "Filho", "Filha", "Tio", "Tia", "Avô", "Avó", "Criança", "Outro"
+  ]; 
 
   final List<Color> _colorOptions = [
     const Color(0xFF4D5BCE), // Azul
@@ -32,9 +37,11 @@ class _MembersScreenState extends State<MembersScreen> {
     if (memberToEdit != null) {
       _nameController.text = memberToEdit.name;
       _selectedColor = memberToEdit.color;
+      _selectedRelationship = memberToEdit.relationship;
     } else {
       _nameController.clear();
       _selectedColor = "0xFF4D5BCE";
+      _selectedRelationship = "Outro";
     }
 
     showDialog(
@@ -70,6 +77,24 @@ class _MembersScreenState extends State<MembersScreen> {
                     textCapitalization: TextCapitalization.words,
                   ),
                 ),
+                const SizedBox(height: 24),
+                
+                // Seleção de Parentesco
+                DropdownButtonFormField<String>(
+                  value: _selectedRelationship,
+                  decoration: InputDecoration(
+                    labelText: "Parentesco",
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    prefixIcon: const Icon(Icons.people_outline, color: Colors.grey),
+                  ),
+                  items: _relationshipOptions.map((rel) => DropdownMenuItem(
+                    value: rel,
+                    child: Text(rel),
+                  )).toList(),
+                  onChanged: (val) => setDialogState(() => _selectedRelationship = val!),
+                ),
+
                 const SizedBox(height: 24),
                 
                 const Align(
@@ -132,13 +157,23 @@ class _MembersScreenState extends State<MembersScreen> {
                         joinedAt: memberToEdit.joinedAt,
                         xp: memberToEdit.xp,
                         level: memberToEdit.level,
+                        coins: memberToEdit.coins,
                         badges: memberToEdit.badges,
+                        relationship: _selectedRelationship,
                       );
                       context.read<MemberProvider>().updateMember(updated);
                     } else {
+                      // Define role baseado no parentesco (simplificado)
+                      String role = 'adult';
+                      if (['Filho', 'Filha', 'Criança'].contains(_selectedRelationship)) {
+                        role = 'child';
+                      }
+                      
                       context.read<MemberProvider>().addMember(
                         _nameController.text,
                         _selectedColor,
+                        role: role,
+                        relationship: _selectedRelationship, 
                       );
                     }
                     Navigator.pop(context);

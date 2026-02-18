@@ -65,11 +65,7 @@ class HomeScreen extends StatelessWidget {
           )
         ),
         actions: [
-          IconButton(
-             icon: const Icon(Icons.favorite, color: Colors.white), // Ícone visível (Branco)
-             onPressed: () => context.push('/cycle-settings'),
-             tooltip: "Configurar Bio-Ritmo",
-           )
+          // Ícone removido pois agora tem o Widget principal
         ],
       ),
       body: Column(
@@ -160,6 +156,105 @@ class HomeScreen extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
               children: [
+                // --- WIDGET DO BIO-RITMO (NOVO) ---
+                if (memberProvider.members.isNotEmpty) ...[
+                  Builder(
+                    builder: (context) {
+                      // Pega o primeiro membro mulher/adulto como referência ou o que tiver ciclo cadastrado
+                      final cycleProvider = context.watch<CycleProvider>();
+                      final memberId = memberProvider.members.first.id; // Simplificação: Pega o primeiro
+                      final cycleInfo = cycleProvider.getCurrentPhaseInfo(memberId);
+
+                      if (cycleInfo['hasData'] == true) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 24),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))
+                            ]
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: (cycleInfo['color'] as Color).withOpacity(0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(cycleInfo['icon'], color: cycleInfo['color']),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            cycleInfo['phase'], 
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold, 
+                                              fontSize: 16,
+                                              color: cycleInfo['color']
+                                            )
+                                          ),
+                                          const Text("Bio-Ritmo da Casa", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                        ],
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.settings, color: Colors.grey),
+                                      onPressed: () => context.push('/cycle-settings'),
+                                    )
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: (cycleInfo['color'] as Color).withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: (cycleInfo['color'] as Color).withOpacity(0.2)),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text("💡 ", style: TextStyle(fontSize: 16)),
+                                      Expanded(
+                                        child: Text(
+                                          cycleInfo['tip'], 
+                                          style: const TextStyle(fontSize: 13, height: 1.4, color: Colors.black87),
+                                        )
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        );
+                      } else {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 24),
+                          child: GlassCard(
+                            child: ListTile(
+                              leading: const Icon(Icons.favorite_border, color: Colors.pinkAccent),
+                              title: const Text("Configurar Bio-Ritmo"),
+                              subtitle: const Text("Toque para acompanhar o ciclo e receber dicas."),
+                              onTap: () => context.push('/cycle-settings'),
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                  ),
+                ],
+
                 Text("O que vamos fazer?", 
                   style: GoogleFonts.fredoka(
                     fontSize: 22, 
@@ -185,6 +280,7 @@ class HomeScreen extends StatelessWidget {
                     
                     // Coloquei o Acordos aqui, mas se quiser pode ser outra coisa
                      _buildGridCard(context, icon: Icons.handshake_rounded, color: Colors.pinkAccent, title: "Acordos", subtitle: "Regras", onTap: () => context.push('/agreements')),
+                     _buildGridCard(context, icon: Icons.bar_chart_rounded, color: Colors.teal, title: "Estatísticas", subtitle: "Relatórios", onTap: () => context.push('/stats')),
                   ],
                 ),
                 const SizedBox(height: 100), // Espaço para o FAB ou BottomNav não cobrir

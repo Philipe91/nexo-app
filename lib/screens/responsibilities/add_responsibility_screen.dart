@@ -1,8 +1,18 @@
+import 'package:nexo/core/models/member_model.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../core/providers/task_provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
+import 'package:record/record.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:uuid/uuid.dart';
+import 'dart:io';
+import 'package:flutter_animate/flutter_animate.dart';
+
 import '../../core/providers/member_provider.dart';
+import '../../core/providers/task_provider.dart';
 import '../../models/task_model.dart';
 
 class AddResponsibilityScreen extends StatefulWidget {
@@ -30,6 +40,13 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
   bool _notifyAtTime = false;
   TimeOfDay? _selectedTime;
 
+  // --- Campos de Áudio ---
+  final AudioRecorder _audioRecorder = AudioRecorder();
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  String? _recordedPath;
+  bool _isRecording = false;
+  bool _isPlaying = false;
+
   final List<String> frequencias = ["Diário", "Semanal", "Mensal", "Eventual"];
   // Códigos dos dias para salvar no banco
   final List<String> weekDays = [
@@ -45,6 +62,11 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
   @override
   void initState() {
     super.initState();
+    
+    _audioPlayer.onPlayerComplete.listen((event) {
+      setState(() => _isPlaying = false);
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final members =
           context.read<MemberProvider>().members.map((m) => m.name).toList();
@@ -70,6 +92,9 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
             if (t.scheduledTime != null) {
               _selectedTime = TimeOfDay.fromDateTime(t.scheduledTime!);
             }
+            
+            // Carregar Áudio
+            _recordedPath = t.audioPath;
           } else {
             quemLembra = members.first;
             quemDecide = members.length > 1 ? members[1] : members.first;
@@ -77,6 +102,55 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
           }
         });
       }
+    });
+  }
+
+  @override
+  void dispose() {
+    _audioRecorder.dispose();
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _startRecording() async {
+    try {
+      if (await _audioRecorder.hasPermission()) {
+        final directory = await getApplicationDocumentsDirectory();
+        final path = '${directory.path}/audio_${const Uuid().v4()}.m4a';
+        
+        await _audioRecorder.start(const RecordConfig(), path: path);
+        setState(() => _isRecording = true);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erro ao gravar: $e")));
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    final path = await _audioRecorder.stop();
+    setState(() {
+      _isRecording = false;
+      _recordedPath = path;
+    });
+  }
+
+  Future<void> _playRecording() async {
+    if (_recordedPath != null) {
+      await _audioPlayer.play(DeviceFileSource(_recordedPath!));
+      setState(() => _isPlaying = true);
+    }
+  }
+
+  Future<void> _stopPlayback() async {
+    await _audioPlayer.stop();
+    setState(() => _isPlaying = false);
+  }
+
+  Future<void> _deleteRecording() async {
+    await _audioPlayer.stop();
+    setState(() {
+      _recordedPath = null;
+      _isPlaying = false;
     });
   }
 
@@ -158,7 +232,7 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
                       Icons.psychology,
                       const Color(0xFF9C27B0),
                       quemLembra!,
-                      memberNames,
+                      memberObjects, // Passa a lista de objetos Member
                       (val) => setState(() => quemLembra = val!)),
                   const Divider(height: 24),
                   _buildDropdownRow(
@@ -167,7 +241,7 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
                       Icons.balance,
                       const Color(0xFF2196F3),
                       quemDecide!,
-                      memberNames,
+                      memberObjects,
                       (val) => setState(() => quemDecide = val!)),
                   const Divider(height: 24),
                   _buildDropdownRow(
@@ -176,7 +250,7 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
                       Icons.fitness_center,
                       const Color(0xFFFF5722),
                       quemExecuta!,
-                      memberNames,
+                      memberObjects,
                       (val) => setState(() => quemExecuta = val!)),
                 ],
               ),
@@ -304,6 +378,11 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
                 },
               ),
 
+            const SizedBox(height: 32),
+
+            // --- ÁUDIO ---
+            _buildAudioSection(theme),
+
             const SizedBox(height: 40),
 
             SizedBox(
@@ -326,10 +405,14 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
       IconData icon,
       Color color,
       String currentValue,
-      List<String> items,
+      List<Member> members,
       ValueChanged<String?> onChanged) {
-    String safeValue =
-        items.contains(currentValue) ? currentValue : items.first;
+    
+    // Encontra o membro atual ou usa o primeiro
+    String safeValue = members.any((m) => m.name == currentValue) 
+        ? currentValue 
+        : (members.isNotEmpty ? members.first.name : "");
+
     return Row(
       children: [
         Icon(icon, color: color),
@@ -339,14 +422,21 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
                 style: const TextStyle(fontWeight: FontWeight.bold))),
         DropdownButton<String>(
           value: safeValue,
-          items: items
-              .map((e) => DropdownMenuItem(
-                  value: e,
-                  child: Text(e,
-                      style: TextStyle(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.bold))))
-              .toList(),
+          items: members.map((m) {
+            final displayName = m.relationship != 'Outro' && m.relationship.isNotEmpty
+                ? "${m.name} (${m.relationship})" 
+                : m.name;
+            
+            return DropdownMenuItem(
+              value: m.name, // O valor salvo continua sendo o Nome (para compatibilidade com TaskModel)
+              child: Text(displayName,
+                  style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold
+                  )
+              ),
+            );
+          }).toList(),
           onChanged: onChanged,
           underline: Container(),
         )
@@ -387,6 +477,9 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
           // Novos Campos
           notifyAtTime: _notifyAtTime,
           scheduledTime: scheduledDateTime,
+          audioPath: _recordedPath,
+          photoBefore: widget.taskToEdit?.photoBefore,
+          photoAfter: widget.taskToEdit?.photoAfter,
         );
         context.read<TaskProvider>().updateTask(updatedTask);
       } else {
@@ -401,9 +494,84 @@ class _AddResponsibilityScreenState extends State<AddResponsibilityScreen> {
               // Novos Campos
               notifyAtTime: _notifyAtTime,
               scheduledTime: scheduledDateTime,
+              audioPath: _recordedPath,
             );
       }
       context.pop();
     }
+  }
+
+  Widget _buildAudioSection(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50], 
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300)
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.mic, color: theme.colorScheme.primary),
+              const SizedBox(width: 8),
+              const Text("Instrução de Voz (Opcional)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: _isRecording
+              ? Column(
+                  children: [
+                    const Text("Gravando...", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold))
+                        .animate(onPlay: (controller) => controller.repeat())
+                        .fadeIn(duration: 500.ms)
+                        .then()
+                        .fadeOut(duration: 500.ms),
+                    const SizedBox(height: 8),
+                    FloatingActionButton.small(
+                      onPressed: _stopRecording,
+                      backgroundColor: Colors.red,
+                      child: const Icon(Icons.stop),
+                    ),
+                  ],
+                )
+              : _recordedPath == null
+                ? ElevatedButton.icon(
+                    onPressed: _startRecording, 
+                    icon: const Icon(Icons.fiber_manual_record, color: Colors.white), 
+                    label: const Text("Gravar Instrução"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent, 
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton.filled(
+                        style: IconButton.styleFrom(backgroundColor: theme.colorScheme.primary),
+                        icon: Icon(_isPlaying ? Icons.stop : Icons.play_arrow, color: Colors.white),
+                        onPressed: _isPlaying ? _stopPlayback : _playRecording,
+                      ),
+                      const SizedBox(width: 16),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: _deleteRecording,
+                        tooltip: "Apagar Áudio",
+                      ),
+                    ],
+                  ),
+          ),
+          if (_recordedPath != null)
+             Center(child: Padding(
+               padding: const EdgeInsets.only(top: 8.0),
+               child: Text("Áudio gravado!", style: TextStyle(color: Colors.green[700], fontSize: 12)),
+             ))
+        ],
+      ),
+    );
   }
 }

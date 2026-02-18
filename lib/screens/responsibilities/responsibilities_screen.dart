@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../models/task_model.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/task_provider.dart';
@@ -150,6 +151,23 @@ class _ResponsibilitiesScreenState extends State<ResponsibilitiesScreen> {
                                           Row(
                                             mainAxisAlignment: MainAxisAlignment.end,
                                             children: [
+                                              // Botão de Concluir (Novo)
+                                              if (!task.isCompletedToday)
+                                                FilledButton.icon(
+                                                  onPressed: () async {
+                                                    await context.read<TaskProvider>().toggleTaskCompletion(task.id);
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      const SnackBar(content: Text("Tarefa concluída! 🎉")),
+                                                    );
+                                                  },
+                                                  icon: const Icon(Icons.check),
+                                                  label: const Text("Concluir"),
+                                                  style: FilledButton.styleFrom(
+                                                    backgroundColor: Colors.green,
+                                                    foregroundColor: Colors.white,
+                                                  ),
+                                                ),
+                                              const Spacer(),
                                               TextButton.icon(
                                                 onPressed: () => context.push('/responsibilities/add', extra: task),
                                                 icon: const Icon(Icons.edit, size: 20),

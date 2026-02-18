@@ -41,25 +41,25 @@ class CycleProvider extends ChangeNotifier {
     if (currentDay <= cycle.periodLength) {
       // MENSTRUAÇÃO
       phaseName = "Fase Menstrual (Dia $currentDay)";
-      empathyTip = "Energia baixa. Priorize descanso e evite sobrecarga.";
+      empathyTip = "Acolhimento: Ela pode estar cansada e sensível. Ofereça um chá, uma bolsa de água quente e assuma tarefas mais pesadas.";
       phaseColor = const Color(0xFFEF5350); // Vermelho Suave
       icon = Icons.water_drop;
     } else if (currentDay <= 11) {
       // FOLICULAR
       phaseName = "Fase Folicular (Dia $currentDay)";
-      empathyTip = "Energia subindo! Ótimo momento para planejar e resolver pendências.";
+      empathyTip = "Planejamento: Energia voltando! Ótimo momento para planejarem a semana juntos e resolverem pendências.";
       phaseColor = const Color(0xFF66BB6A); // Verde
       icon = Icons.grass;
     } else if (currentDay <= 16) {
       // OVULATÓRIA
       phaseName = "Ovulação (Dia $currentDay)";
-      empathyTip = "Pico de energia e comunicação. Bom para conversas importantes.";
+      empathyTip = "Conexão: A libido e a comunicação estão em alta. Aproveitem para ter momentos de qualidade a dois.";
       phaseColor = const Color(0xFFFFA726); // Laranja
       icon = Icons.wb_sunny;
     } else {
       // LÚTEA (TPM)
       phaseName = "Fase Lútea (Dia $currentDay)";
-      empathyTip = "Energia diminuindo. Tenha paciência e ofereça acolhimento.";
+      empathyTip = "Alerta Vermelho ⚠️: Paciência redobrada. Evite conflitos desnecessários, ofereça chocolate 🍫 e não leve patadas para o lado pessoal.";
       phaseColor = const Color(0xFFAB47BC); // Roxo
       icon = Icons.nights_stay;
     }

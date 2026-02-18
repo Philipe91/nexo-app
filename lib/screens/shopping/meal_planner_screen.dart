@@ -32,6 +32,7 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
 
   void _addMealDialog(BuildContext context, String type) {
     final TextEditingController descController = TextEditingController();
+    final TextEditingController ingredientsController = TextEditingController(); // Novo controller
     final memberProvider = context.read<MemberProvider>();
     String? selectedChefId;
 
@@ -51,6 +52,15 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                     border: OutlineInputBorder(),
                   ),
                 ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: ingredientsController,
+                  decoration: const InputDecoration(
+                    labelText: "Ingredientes (separe por vírgula)", 
+                    hintText: "Massa, Queijo, Molho...",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   value: selectedChefId,
@@ -67,11 +77,18 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
               ElevatedButton(
                 onPressed: () {
                   if (descController.text.isNotEmpty && selectedChefId != null) {
+                    // Processar ingredientes
+                    List<String> ingredients = [];
+                    if (ingredientsController.text.isNotEmpty) {
+                      ingredients = ingredientsController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+                    }
+
                     context.read<ShoppingProvider>().addMeal(
-                      _cleanDate, // Usa a data limpa
+                      _cleanDate, 
                       type, 
                       descController.text, 
-                      selectedChefId!
+                      selectedChefId!,
+                      ingredients // Passar lista
                     );
                     Navigator.pop(ctx);
                   }
@@ -237,6 +254,22 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                     style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                   ),
+                  
+                  if (meal.ingredients.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      alignment: WrapAlignment.center,
+                      children: meal.ingredients.map((i) => Chip(
+                        label: Text(i, style: const TextStyle(fontSize: 12)),
+                        backgroundColor: Colors.white,
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                      )).toList(),
+                    ),
+                  ],
+
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -263,7 +296,31 @@ class _MealPlannerScreenState extends State<MealPlannerScreen> {
                         ),
                       )
                     ],
-                  )
+                  ),
+
+                  if (meal.ingredients.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          context.read<ShoppingProvider>().addIngredientsToShoppingList(meal.ingredients);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("${meal.ingredients.length} itens adicionados à lista!"),
+                              backgroundColor: Colors.green,
+                            )
+                          );
+                        },
+                        icon: const Icon(Icons.add_shopping_cart, size: 18),
+                        label: const Text("Adicionar à Lista"),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.green,
+                          side: const BorderSide(color: Colors.green),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               )
           ],

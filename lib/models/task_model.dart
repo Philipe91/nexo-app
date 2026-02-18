@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Task {
   final String id;
   final String title;
@@ -18,6 +20,21 @@ class Task {
   final bool notify1dBefore;  
   final DateTime? scheduledTime; 
 
+  // --- Campos de Prova (Fotos) ---
+  final String? photoBefore;
+  final String? photoAfter; 
+  
+  // --- Áudio ---
+  final String? audioPath;
+
+  bool get isCompletedToday {
+    if (lastCompletedDate == null) return false;
+    final now = DateTime.now();
+    return lastCompletedDate!.year == now.year &&
+        lastCompletedDate!.month == now.month &&
+        lastCompletedDate!.day == now.day;
+  }
+
   Task({
     required this.id,
     required this.title,
@@ -26,13 +43,16 @@ class Task {
     required this.whoRemembers,
     required this.whoDecides,
     required this.whoExecutes,
-    required this.createdAt, // <--- ELE ESTÁ AQUI!
+    required this.createdAt, 
     this.days = const [], 
     this.lastCompletedDate,
     this.notifyAtTime = false,
     this.notify1hBefore = false,
     this.notify1dBefore = false,
     this.scheduledTime,
+    this.photoBefore,
+    this.photoAfter,
+    this.audioPath,
   });
 
   Map<String, dynamic> toMap() {
@@ -44,17 +64,26 @@ class Task {
       'whoRemembers': whoRemembers,
       'whoDecides': whoDecides,
       'whoExecutes': whoExecutes,
-      'createdAt': createdAt.toIso8601String(),
+      'createdAt': Timestamp.fromDate(createdAt),
       'days': days,
-      'lastCompletedDate': lastCompletedDate?.toIso8601String(),
+      'lastCompletedDate': lastCompletedDate != null ? Timestamp.fromDate(lastCompletedDate!) : null,
       'notifyAtTime': notifyAtTime,
       'notify1hBefore': notify1hBefore,
       'notify1dBefore': notify1dBefore,
-      'scheduledTime': scheduledTime?.toIso8601String(),
+      'scheduledTime': scheduledTime != null ? Timestamp.fromDate(scheduledTime!) : null,
+      'photoBefore': photoBefore,
+      'photoAfter': photoAfter,
+      'audioPath': audioPath,
     };
   }
 
   factory Task.fromMap(Map<String, dynamic> map) {
+    DateTime? toDateTime(dynamic value) {
+      if (value is Timestamp) return value.toDate();
+      if (value is String) return DateTime.tryParse(value);
+      return null;
+    }
+
     return Task(
       id: map['id'] ?? '',
       title: map['title'] ?? '',
@@ -63,19 +92,16 @@ class Task {
       whoRemembers: map['whoRemembers'] ?? '',
       whoDecides: map['whoDecides'] ?? '',
       whoExecutes: map['whoExecutes'] ?? '',
-      createdAt: map['createdAt'] != null 
-          ? DateTime.parse(map['createdAt']) 
-          : DateTime.now(),
+      createdAt: toDateTime(map['createdAt']) ?? DateTime.now(),
       days: List<String>.from(map['days'] ?? []), 
-      lastCompletedDate: map['lastCompletedDate'] != null 
-          ? DateTime.tryParse(map['lastCompletedDate']) 
-          : null,
+      lastCompletedDate: toDateTime(map['lastCompletedDate']),
       notifyAtTime: map['notifyAtTime'] ?? false,
       notify1hBefore: map['notify1hBefore'] ?? false,
       notify1dBefore: map['notify1dBefore'] ?? false,
-      scheduledTime: map['scheduledTime'] != null 
-          ? DateTime.tryParse(map['scheduledTime']) 
-          : null,
+      scheduledTime: toDateTime(map['scheduledTime']),
+      photoBefore: map['photoBefore'],
+      photoAfter: map['photoAfter'],
+      audioPath: map['audioPath'],
     );
   }
 }

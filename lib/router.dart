@@ -13,12 +13,17 @@ import 'screens/members/members_screen.dart';
 import 'screens/agreements/agreements_screen.dart';
 import 'screens/cycle/cycle_settings_screen.dart';
 import 'screens/kid_mode/kid_mode_screen.dart'; 
+import 'screens/kid_mode/rewards_screen.dart'; // <--- Import Novo
 import 'screens/shopping/shopping_list_screen.dart'; // <--- Import Novo
+import 'package:nexo/screens/stats/statistics_screen.dart'; // <--- Nova Tela
 import 'screens/shopping/meal_planner_screen.dart'; // <--- Import Novo
 import 'screens/checkin/checkin_screen.dart'; // <--- Import Novo
 import 'screens/scaffold_with_navbar.dart'; // <--- Import Novo para Navbar
 import 'screens/planning/weekly_planning_screen.dart'; // <--- Import Novo
 import 'screens/settings/settings_screen.dart'; // <--- Import Novo
+import 'screens/settings/manage_rewards_screen.dart'; 
+import 'screens/bank/bank_screen.dart'; // <--- Import Novo
+import 'screens/bank/bank_manager_screen.dart'; // <--- Import Novo
 
 // Configuração Centralizada de Rotas
 // Configuração Centralizada de Rotas
@@ -34,6 +39,11 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
       GoRoute(
         path: '/splash',
         builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/stats',
+        pageBuilder: (context, state) => _buildPageWithAnimation(
+          context: context, state: state, child: const StatisticsScreen()),
       ),
 
       // 1. INTRODUÇÃO
@@ -151,6 +161,17 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
           context: context, state: state, child: const KidModeScreen()), 
       ),
 
+      // 10. LOJA DE RECOMPENSAS
+      GoRoute(
+        path: '/rewards/:kidId',
+        parentNavigatorKey: rootNavigatorKey,
+        pageBuilder: (context, state) {
+          final kidId = state.pathParameters['kidId']!;
+          return _buildPageWithAnimation(
+            context: context, state: state, child: RewardsScreen(kidId: kidId)); 
+        },
+      ),
+
       // 10. LISTA DE COMPRAS - MOVED TO SHELL BUT KEEPING HERE AS FALLBACK IF NEEDED OR REMOVING
       // (Já está no Shell)
 
@@ -178,12 +199,38 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
           context: context, state: state, child: const CheckInScreen()), 
       ),
 
-      // 14. CONFIGURAÇÕES (Faltava esta rota!)
       GoRoute(
         path: '/settings',
         parentNavigatorKey: rootNavigatorKey,
         pageBuilder: (context, state) => _buildPageWithAnimation(
           context: context, state: state, child: const SettingsScreen()), 
+      ),
+
+      // 15. GERENCIAR RECOMPENSAS
+      GoRoute(
+        path: '/manage-rewards',
+        parentNavigatorKey: rootNavigatorKey,
+        pageBuilder: (context, state) => _buildPageWithAnimation(
+          context: context, state: state, child: const ManageRewardsScreen()), 
+      ),
+
+      // 16. BANCO
+      GoRoute(
+        path: '/bank/:kidId',
+        parentNavigatorKey: rootNavigatorKey,
+        pageBuilder: (context, state) {
+          final kidId = state.pathParameters['kidId']!;
+          return _buildPageWithAnimation(
+            context: context, state: state, child: BankScreen(kidId: kidId)); 
+        },
+      ),
+
+      // 17. GERENCIAR BANCO
+      GoRoute(
+        path: '/manage-bank',
+        parentNavigatorKey: rootNavigatorKey,
+        pageBuilder: (context, state) => _buildPageWithAnimation(
+          context: context, state: state, child: const BankManagerScreen()), 
       ),
     ],
   );

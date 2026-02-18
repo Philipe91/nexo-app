@@ -1,11 +1,16 @@
-import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/task_model.dart';
-import '../services/notification_service.dart'; // <--- Import Novo
+import '../services/notification_service.dart';
 
 class TaskProvider extends ChangeNotifier {
   List<Task> _tasks = [];
+  StreamSubscription<QuerySnapshot>? _tasksSubscription;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  
+  // TODO: Em um app real, usar ID da família do usuário logado
+  String get _familyId => 'default_family'; 
 
   List<Task> get tasks => _tasks;
 
@@ -15,7 +20,39 @@ class TaskProvider extends ChangeNotifier {
   }
 
   TaskProvider() {
-    loadTasks();
+    subscribeToTasks();
+  }
+
+  // --- ESCUTAR DO FIREBASE (REAL-TIME) ---
+  void subscribeToTasks() {
+    _tasksSubscription = _firestore
+        .collection('families')
+        .doc(_familyId)
+        .collection('tasks')
+        .snapshots()
+        .listen((snapshot) {
+      
+      _tasks = snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id; // Garante que o ID do modelo é o mesmo do Doc
+        return Task.fromMap(data);
+      }).toList();
+
+      notifyListeners();
+
+      // Sincronizar Notificações (Smart Sync)
+      // Sempre que chegarem dados novos, atualiza os agendamentos
+      NotificationService().syncNotifications(_tasks);
+      
+    }, onError: (e) {
+      print("❌ Erro no Stream de Tarefas: $e");
+    });
+  }
+
+  @override
+  void dispose() {
+    _tasksSubscription?.cancel();
+    super.dispose();
   }
 
   // Filtrar tarefas por dia (ex: "Seg")
@@ -43,9 +80,25 @@ class TaskProvider extends ChangeNotifier {
     };
   }
 
+  // Estatísticas Semanais (Últimos 7 dias)
+  Map<String, int> calculateWeeklyStats() {
+    final now = DateTime.now();
+    final sevenDaysAgo = now.subtract(const Duration(days: 7));
+    Map<String, int> stats = {};
+
+    for (var task in _tasks) {
+      if (task.lastCompletedDate != null && task.lastCompletedDate!.isAfter(sevenDaysAgo)) {
+        // Atribui pontos para quem executou
+        final executor = task.whoExecutes;
+        stats[executor] = (stats[executor] ?? 0) + 1; // 1 ponto por tarefa (pode ser + task.effort)
+      }
+    }
+    return stats;
+  }
+
   // --- AÇÕES ---
 
-  void addTask({
+  Future<void> addTask({
     required String title,
     required String whoRemembers,
     required String whoDecides,
@@ -55,9 +108,10 @@ class TaskProvider extends ChangeNotifier {
     required List<String> days,
     DateTime? scheduledTime,
     bool notifyAtTime = false,
-  }) {
+    String? audioPath,
+  }) async {
     final newTask = Task(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: '', // Firestore vai gerar
       title: title,
       whoRemembers: whoRemembers,
       whoDecides: whoDecides,
@@ -68,58 +122,41 @@ class TaskProvider extends ChangeNotifier {
       createdAt: DateTime.now(),
       scheduledTime: scheduledTime,
       notifyAtTime: notifyAtTime,
+      audioPath: audioPath,
     );
 
-    _tasks.add(newTask);
-    saveTasks();
-    notifyListeners();
-
-    // Agendar Notificação
-    if (notifyAtTime && scheduledTime != null) {
-      // Usamos o hashCode do ID como ID da notificação (convertendo string para int seguro)
-      int notificationId = int.parse(newTask.id.substring(newTask.id.length - 8)); 
-      
-      NotificationService().scheduleNotification(
-        id: notificationId,
-        title: "Hora de: ${newTask.title}",
-        body: "Ei $whoExecutes, sua tarefa te espera!",
-        scheduledDate: scheduledTime,
-      );
+    try {
+      await _firestore
+          .collection('families')
+          .doc(_familyId)
+          .collection('tasks')
+          .add(newTask.toMap());
+      // O listener vai atualizar a UI e Notificações automaticamente
+    } catch (e) {
+      print("❌ Erro ao adicionar tarefa: $e");
     }
   }
 
-  void updateTask(Task updatedTask) {
-    final index = _tasks.indexWhere((t) => t.id == updatedTask.id);
-    if (index >= 0) {
-      _tasks[index] = updatedTask;
-      saveTasks();
-      notifyListeners();
-
-      // Cancelar e/ou Reagendar
-      // Usa os últimos 8 dígitos do ID como ID da notificação
-      int notificationId = int.parse(updatedTask.id.substring(updatedTask.id.length - 8));
-      
-      NotificationService().cancelNotification(notificationId);
-
-      if (updatedTask.notifyAtTime && updatedTask.scheduledTime != null) {
-         NotificationService().scheduleNotification(
-          id: notificationId,
-          title: "Hora de: ${updatedTask.title}",
-          body: "Ei ${updatedTask.whoExecutes}, sua tarefa te espera!",
-          scheduledDate: updatedTask.scheduledTime!,
-        );
-      }
+  Future<void> updateTask(Task updatedTask) async {
+    try {
+      await _firestore
+          .collection('families')
+          .doc(_familyId)
+          .collection('tasks')
+          .doc(updatedTask.id)
+          .update(updatedTask.toMap());
+    } catch (e) {
+      print("❌ Erro ao atualizar tarefa: $e");
     }
   }
 
-  // --- NOVO: COMPLETAR/DESCOMPLETAR TAREFA (CHECK) ---
-  bool toggleTaskCompletion(String taskId) {
+  // --- COMPLETAR/DESCOMPLETAR TAREFA (CHECK) ---
+  Future<bool> toggleTaskCompletion(String taskId) async {
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index >= 0) {
       final task = _tasks[index];
       final now = DateTime.now();
 
-      // Verifica se já foi feita hoje (compara Dia, Mês e Ano)
       bool isDoneToday = false;
       if (task.lastCompletedDate != null) {
         final last = task.lastCompletedDate!;
@@ -128,9 +165,8 @@ class TaskProvider extends ChangeNotifier {
             last.day == now.day;
       }
 
-      final bool isCompleting = !isDoneToday; // Se não fez, está completando agora
+      final bool isCompleting = !isDoneToday; 
 
-      // Se já fez hoje, "desfaz" (null). Se não fez, marca hoje.
       final updatedTask = Task(
         id: task.id,
         title: task.title,
@@ -146,26 +182,22 @@ class TaskProvider extends ChangeNotifier {
         notifyAtTime: task.notifyAtTime, 
       );
 
-      _tasks[index] = updatedTask;
-      saveTasks();
-      notifyListeners();
-      
+      await updateTask(updatedTask);
       return isCompleting;
     }
     return false;
   }
 
-  void reassignTask(String taskId, String newMemberId) {
+  Future<void> reassignTask(String taskId, String newMemberId) async {
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index >= 0) {
       final task = _tasks[index];
-      // Atualiza quem executa. O Model espera String, não List<String>.
       final updatedTask = Task(
         id: task.id,
         title: task.title,
-        whoRemembers: newMemberId, // Corrigido: String
-        whoDecides: newMemberId,   // Corrigido: String
-        whoExecutes: newMemberId,  // Corrigido: String
+        whoRemembers: newMemberId,
+        whoDecides: newMemberId,  
+        whoExecutes: newMemberId, 
         effort: task.effort,
         frequency: task.frequency,
         days: task.days,
@@ -174,9 +206,7 @@ class TaskProvider extends ChangeNotifier {
         scheduledTime: task.scheduledTime,
         notifyAtTime: task.notifyAtTime,
       );
-      _tasks[index] = updatedTask;
-      saveTasks();
-      notifyListeners();
+      await updateTask(updatedTask);
     }
   }
 
@@ -187,33 +217,18 @@ class TaskProvider extends ChangeNotifier {
     return memberTasks.fold(0, (sum, t) => sum + t.effort);
   }
 
-  void removeTask(String id) {
-    _tasks.removeWhere((task) => task.id == id);
-    saveTasks();
-    notifyListeners();
-    
-    // Cancelar notificação associada
-    if (id.length >= 8) {
-       int notificationId = int.parse(id.substring(id.length - 8));
-       NotificationService().cancelNotification(notificationId);
-    }
-  }
-
-  // --- PERSISTÊNCIA ---
-
-  Future<void> saveTasks() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String data = jsonEncode(_tasks.map((t) => t.toMap()).toList());
-    await prefs.setString('tasks_data', data);
-  }
-
-  Future<void> loadTasks() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.containsKey('tasks_data')) {
-      final String data = prefs.getString('tasks_data')!;
-      final List<dynamic> decodedList = jsonDecode(data);
-      _tasks = decodedList.map((item) => Task.fromMap(item)).toList();
-      notifyListeners();
+  Future<void> removeTask(String id) async {
+    try {
+      await _firestore
+          .collection('families')
+          .doc(_familyId)
+          .collection('tasks')
+          .doc(id)
+          .delete();
+       // Cancelamento de notificação é handled pelo syncNotifications no listener, 
+       // pois a task sumirá da lista e o sync reagendará (ou limpará) tudo.
+    } catch (e) {
+      print("❌ Erro ao remover task: $e");
     }
   }
 }

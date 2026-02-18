@@ -14,16 +14,17 @@ class MemberProvider extends ChangeNotifier {
 
   // --- AÇÕES ---
 
-  void addMember(String name, String color) {
+  void addMember(String name, String color, {String role = 'adult', String relationship = 'Outro'}) {
     final newId = DateTime.now().millisecondsSinceEpoch.toString();
     final newMember = Member(
       id: newId,
       userId: newId, // Local ID as userID for now
       familyId: 'local_family',
       name: name,
-      role: 'child', // Defaulting to child for local adds? Or adult?
+      role: role,
       color: color,
       joinedAt: DateTime.now(),
+      relationship: relationship,
     );
     _members.add(newMember);
     saveMembers();
@@ -32,21 +33,20 @@ class MemberProvider extends ChangeNotifier {
 
   // --- NOVO: GAMIFICATION ---
   
-  bool addXp(String memberId, int amount) {
+  bool addXpAndCoins(String memberId, int xpAmount, int coinAmount) {
     bool leveledUp = false;
     final index = _members.indexWhere((m) => m.id == memberId);
     if (index >= 0) {
       final member = _members[index];
-      int newXp = member.xp + amount;
+      int newXp = member.xp + xpAmount;
       int newLevel = _calculateLevel(newXp);
+      int newCoins = member.coins + coinAmount;
 
-      // Verifica se subiu de nível
       if (newLevel > member.level) {
         leveledUp = true;
-        print("🎉 LEVEL UP! ${member.name} subiu para o nível $newLevel!");
       }
 
-      _members[index] = Member(
+      final updatedMember = Member(
         id: member.id,
         userId: member.userId,
         familyId: member.familyId,
@@ -56,12 +56,43 @@ class MemberProvider extends ChangeNotifier {
         joinedAt: member.joinedAt,
         xp: newXp,
         level: newLevel,
+        coins: newCoins,
         badges: member.badges,
       );
-      saveMembers();
+
+      // Atualiza localmente para feedback instantâneo e salva (se fosse Firebase, usaria update)
+      _members[index] = updatedMember;
+      saveMembers(); 
       notifyListeners();
     }
     return leveledUp;
+  }
+
+  bool spendCoins(String memberId, int amount) {
+    final index = _members.indexWhere((m) => m.id == memberId);
+    if (index >= 0) {
+      final member = _members[index];
+      if (member.coins >= amount) {
+        final updatedMember = Member(
+          id: member.id,
+          userId: member.userId,
+          familyId: member.familyId,
+          name: member.name,
+          role: member.role,
+          color: member.color,
+          joinedAt: member.joinedAt,
+          xp: member.xp,
+          level: member.level,
+          coins: member.coins - amount,
+          badges: member.badges,
+        );
+        _members[index] = updatedMember;
+        saveMembers();
+        notifyListeners();
+        return true; // Compra realizada
+      }
+    }
+    return false; // Saldo insuficiente
   }
 
   void unlockBadge(String memberId, String badgeId) {

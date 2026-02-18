@@ -8,7 +8,9 @@ class Member {
   final DateTime joinedAt;
   final int xp;
   final int level;
+  final int coins;
   final List<String> badges;
+  final String relationship; // Pai, Mãe, Filho, Filha, Tio, Tia, Avô, Avó, Outro
 
   Member({
     required this.id,
@@ -20,7 +22,9 @@ class Member {
     required this.joinedAt,
     this.xp = 0,
     this.level = 1,
+    this.coins = 0,
     this.badges = const [],
+    this.relationship = 'Outro',
   });
 
   // Converte para Mapa (Salvar no banco/local)
@@ -35,7 +39,9 @@ class Member {
       'joinedAt': joinedAt.toIso8601String(),
       'xp': xp,
       'level': level,
+      'coins': coins,
       'badges': badges,
+      'relationship': relationship,
     };
   }
 
@@ -53,7 +59,9 @@ class Member {
           : DateTime.now(),
       xp: map['xp'] ?? 0,
       level: map['level'] ?? 1,
+      coins: map['coins'] ?? 0,
       badges: List<String>.from(map['badges'] ?? []),
+      relationship: map['relationship'] ?? 'Outro',
     );
   }
 }

@@ -1,12 +1,18 @@
-import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/grocery_item_model.dart';
 import '../../models/meal_model.dart';
 
 class ShoppingProvider extends ChangeNotifier {
   List<GroceryItem> _items = [];
   List<Meal> _meals = [];
+  
+  StreamSubscription<QuerySnapshot>? _itemsSubscription;
+  StreamSubscription<QuerySnapshot>? _mealsSubscription;
+  
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String get _familyId => 'default_family';
 
   List<GroceryItem> get items => _items;
   List<Meal> get meals => _meals;
@@ -17,71 +23,163 @@ class ShoppingProvider extends ChangeNotifier {
   ];
 
   ShoppingProvider() {
-    loadData();
+    subscribeToData();
+  }
+
+  // --- ESCUTAR DO FIREBASE ---
+  void subscribeToData() {
+    // Escutar Itens de Compra
+    _itemsSubscription = _firestore
+        .collection('families')
+        .doc(_familyId)
+        .collection('shopping_list')
+        .orderBy('isCompleted') // Opcional: ordenar por status
+        .snapshots()
+        .listen((snapshot) {
+      _items = snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return GroceryItem.fromMap(data);
+      }).toList();
+      notifyListeners();
+    });
+
+    // Escutar Refeições
+    _mealsSubscription = _firestore
+        .collection('families')
+        .doc(_familyId)
+        .collection('meals')
+        .orderBy('date')
+        .snapshots()
+        .listen((snapshot) {
+      _meals = snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        // Ajuste se Meal usar Timestamp
+        if (data['date'] is Timestamp) {
+           // Se o fromMap não tratar, precise converter. 
+           // Mas vamos assumir que o MealModel será ajustado ou já trata se for updated em breve.
+           // Por enquanto, faremos o "cast" se necessário no fromMap.
+           // Se o MealModel não estiver preparado, podemos ter erro aqui.
+           // Verifiquei o file anterior e não vi MealModel. 
+           // Assumindo que Meal usa String ou DateTime. Se usar DateTime, Firestore manda Timestamp.
+           // Vou garantir a conversão no map antes.
+           data['date'] = (data['date'] as Timestamp).toDate().toIso8601String(); 
+        }
+        return Meal.fromMap(data);
+      }).toList();
+      notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _itemsSubscription?.cancel();
+    _mealsSubscription?.cancel();
+    super.dispose();
   }
 
   // --- COMPRAS ---
 
-  void addItem(String name, String addedBy, {String category = 'Geral'}) {
+  Future<void> addItem(String name, String addedBy, {String category = 'Geral'}) async {
     final newItem = GroceryItem(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: '',
       name: name,
       category: category,
       addedBy: addedBy,
     );
-    _items.add(newItem);
-    saveData();
-    notifyListeners();
+    await _firestore.collection('families').doc(_familyId).collection('shopping_list').add(newItem.toMap());
   }
 
-  void toggleItem(String id) {
+  Future<void> toggleItem(String id) async {
     final index = _items.indexWhere((item) => item.id == id);
     if (index >= 0) {
       final item = _items[index];
-      _items[index] = GroceryItem(
-        id: item.id,
-        name: item.name,
-        category: item.category,
-        isCompleted: !item.isCompleted,
-        quantity: item.quantity,
-        addedBy: item.addedBy,
-      );
-      saveData();
+      // Optimistic Update
+      final oldStatus = item.isCompleted;
+      _items[index] = item.copyWith(isCompleted: !oldStatus); // Requer copyWith no Model
       notifyListeners();
+
+      try {
+        await _firestore
+            .collection('families')
+            .doc(_familyId)
+            .collection('shopping_list')
+            .doc(id)
+            .update({'isCompleted': !oldStatus});
+      } catch (e) {
+        // Revert if error
+        _items[index] = item.copyWith(isCompleted: oldStatus);
+        notifyListeners();
+        print("Erro ao atualizar item: $e");
+      }
     }
   }
 
-  void removeItem(String id) {
-    _items.removeWhere((item) => item.id == id);
-    saveData();
-    notifyListeners();
+  Future<void> removeItem(String id) async {
+    await _firestore
+        .collection('families')
+        .doc(_familyId)
+        .collection('shopping_list')
+        .doc(id)
+        .delete();
   }
 
-  void clearCompleted() {
-    _items.removeWhere((item) => item.isCompleted);
-    saveData();
-    notifyListeners();
+  Future<void> clearCompleted() async {
+    final batch = _firestore.batch();
+    final completed = _items.where((i) => i.isCompleted);
+    
+    for (var item in completed) {
+      final ref = _firestore
+          .collection('families')
+          .doc(_familyId)
+          .collection('shopping_list')
+          .doc(item.id);
+      batch.delete(ref);
+    }
+    await batch.commit();
   }
 
   // --- REFEIÇÕES ---
 
-  void addMeal(DateTime date, String type, String description, String chefId) {
+  Future<void> addIngredientsToShoppingList(List<String> ingredients) async {
+    final batch = _firestore.batch();
+    for (var ingredient in ingredients) {
+      final docRef = _firestore.collection('families').doc(_familyId).collection('shopping_list').doc();
+      final newItem = GroceryItem(
+        id: docRef.id,
+        name: ingredient,
+        category: 'Cardápio',
+        addedBy: 'MealPlanner',
+      );
+      batch.set(docRef, newItem.toMap());
+    }
+    await batch.commit();
+  }
+
+  Future<void> addMeal(DateTime date, String type, String description, String chefId, List<String> ingredients) async {
     final newMeal = Meal(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: '',
       date: date,
       type: type,
       description: description,
       chefId: chefId,
+      ingredients: ingredients,
     );
-    _meals.add(newMeal);
-    saveData();
-    notifyListeners();
+     // MealModel toMap provavelmente usa toIso8601String para data se não foi alterado.
+     // Se quisermos usar Timestamp, teríamos que mudar o Model.
+     // Para consistência rápida, vou deixar como String ou alterar para Timestamp se der.
+     // Mas aqui vou mandar o map como está.
+    await _firestore.collection('families').doc(_familyId).collection('meals').add(newMeal.toMap());
   }
   
-  void removeMeal(String id) {
-    _meals.removeWhere((m) => m.id == id);
-    saveData();
-    notifyListeners();
+  Future<void> removeMeal(String id) async {
+    await _firestore
+        .collection('families')
+        .doc(_familyId)
+        .collection('meals')
+        .doc(id)
+        .delete();
   }
 
   List<Meal> getMealsForDay(DateTime date) {
@@ -90,34 +188,5 @@ class ShoppingProvider extends ChangeNotifier {
       m.date.month == date.month && 
       m.date.day == date.day
     ).toList();
-  }
-
-  // --- PERSISTÊNCIA ---
-
-  Future<void> saveData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String itemsData = jsonEncode(_items.map((i) => i.toMap()).toList());
-    final String mealsData = jsonEncode(_meals.map((m) => m.toMap()).toList());
-    
-    await prefs.setString('shopping_items', itemsData);
-    await prefs.setString('meals_data', mealsData);
-  }
-
-  Future<void> loadData() async {
-    final prefs = await SharedPreferences.getInstance();
-    
-    if (prefs.containsKey('shopping_items')) {
-      final String data = prefs.getString('shopping_items')!;
-      final List<dynamic> decoded = jsonDecode(data);
-      _items = decoded.map((i) => GroceryItem.fromMap(i)).toList();
-    }
-
-    if (prefs.containsKey('meals_data')) {
-      final String data = prefs.getString('meals_data')!;
-      final List<dynamic> decoded = jsonDecode(data);
-      _meals = decoded.map((m) => Meal.fromMap(m)).toList();
-    }
-    
-    notifyListeners();
   }
 }

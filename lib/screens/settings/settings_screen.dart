@@ -101,8 +101,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SwitchListTile(
             secondary: const Icon(Icons.dark_mode_outlined),
             title: const Text("Modo Escuro"),
-            value: prefs.isDarkMode,
+            value: prefs.isDarkMode ?? false,
             onChanged: (val) => prefs.toggleTheme(val),
+          ),
+
+          const Divider(),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text("FAMÍLIA & MODO CRIANÇA", style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 12)),
+          ),
+
+          ListTile(
+            leading: const Icon(Icons.storefront, color: Colors.purple),
+            title: const Text("Gerenciar Loja de Prêmios"),
+            subtitle: const Text("Adicione ou remova itens que seus filhos podem comprar"),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/manage-rewards'),
+          ),
+
+          ListTile(
+            leading: const Icon(Icons.account_balance, color: Colors.green),
+            title: const Text("Gerenciar Banco da Família"),
+            subtitle: const Text("Pagar mesada e verificar saldo"),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/manage-bank'),
           ),
 
           const Divider(),
