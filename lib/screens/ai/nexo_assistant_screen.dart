@@ -7,7 +7,8 @@ import '../../core/providers/assistant_provider.dart';
 import '../../core/providers/task_provider.dart';
 import '../../core/providers/member_provider.dart';
 import '../../core/providers/shopping_provider.dart';
-import '../../core/providers/bank_provider.dart'; // <--- Import Adicionado
+import '../../core/providers/bank_provider.dart'; 
+import '../../core/providers/cycle_provider.dart'; // <--- Import Adicionado
 
 class NexoAssistantScreen extends StatefulWidget {
   const NexoAssistantScreen({super.key});
@@ -19,6 +20,18 @@ class NexoAssistantScreen extends StatefulWidget {
 class _NexoAssistantScreenState extends State<NexoAssistantScreen> {
   final _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Trigger Proactive AI Check
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AssistantProvider>().checkForProactiveSuggestions(
+        cycleProvider: context.read<CycleProvider>(),
+        memberProvider: context.read<MemberProvider>(),
+      );
+    });
+  }
 
   void _sendMessage() {
     if (_textController.text.trim().isEmpty) return;

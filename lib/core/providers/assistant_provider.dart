@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:nexo/core/providers/task_provider.dart';
 import 'package:nexo/core/providers/shopping_provider.dart'; 
 import 'package:nexo/core/providers/member_provider.dart';
-import 'package:nexo/core/providers/bank_provider.dart'; // <--- Import Adicionado
+import 'package:nexo/core/providers/member_provider.dart';
+import 'package:nexo/core/providers/bank_provider.dart'; 
+import 'package:nexo/core/providers/cycle_provider.dart'; // <--- Import Adicionado
 import 'package:uuid/uuid.dart';
 
 class AssistantMessage {
@@ -230,5 +232,58 @@ class AssistantProvider extends ChangeNotifier {
     }
 
     return "Entendi que é uma tarefa, mas não captei quem ou o quê. Tente: 'Lembrar o [Nome] de [Fazer algo]'.";
+  }
+  // --- PROACTIVE AI (NOVO) ---
+  DateTime? _lastSuggestionDate;
+
+  Future<void> checkForProactiveSuggestions({
+    required CycleProvider cycleProvider,
+    required MemberProvider memberProvider,
+  }) async {
+    // 1. Verifica frequência (1 vez por dia)
+    final now = DateTime.now();
+    if (_lastSuggestionDate != null) {
+      if (_lastSuggestionDate!.day == now.day && 
+          _lastSuggestionDate!.month == now.month && 
+          _lastSuggestionDate!.year == now.year) {
+        return; // Já sugeriu hoje
+      }
+    }
+
+    // 2. Analisa Ciclo
+    for (var member in memberProvider.members) {
+      final cycleInfo = cycleProvider.getCurrentPhaseInfo(member.id);
+      
+      if (cycleInfo['hasData'] == true) {
+        final String phase = cycleInfo['phase'] ?? "";
+        
+        // Fases "Difíceis"
+        if (phase.contains("Lútea") || phase.contains("Menstrual")) {
+           // Encontrou alguém precisando de apoio!
+           final suggestion = _getRandomSupportSuggestion();
+           
+           // Adiciona mensagem proativa
+           _addMessage("🤖 Notei que a ${member.name} está na **$phase**. Que tal fazer um agrado?", false);
+           await Future.delayed(const Duration(milliseconds: 1000));
+           _addMessage("Sugestão: $suggestion", false);
+           
+           _lastSuggestionDate = now;
+           return; // Sugere só uma coisa por vez
+        }
+      }
+    }
+  }
+
+  String _getRandomSupportSuggestion() {
+    final suggestions = [
+      "Assumir o jantar hoje à noite 🍝",
+      "Fazer uma massagem nos pés 💆‍♀️",
+      "Levar as crianças para passear 🌳",
+      "Preparar um chá quente 🍵",
+      "Cuidar da louça do jantar b🍽️",
+      "Ver um filme tranquilo juntos 🎬",
+      "Trazer um chocolate surpresa 🍫",
+    ];
+    return suggestions[DateTime.now().microsecond % suggestions.length];
   }
 }

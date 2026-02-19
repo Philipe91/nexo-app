@@ -17,7 +17,8 @@ import 'core/providers/agreement_provider.dart';
 import 'core/providers/preferences_provider.dart';
 import 'core/providers/shopping_provider.dart';
 import 'core/providers/reward_provider.dart'; 
-import 'core/providers/bank_provider.dart'; // <--- Import Novo
+import 'core/providers/bank_provider.dart';
+import 'core/providers/mental_load_provider.dart'; // <--- Import Novo
 import 'core/services/notification_service.dart';
 
 // --- ARQUIVO GERADO PELO FLUTTERFIRE ---
@@ -56,6 +57,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ShoppingProvider()),
         ChangeNotifierProvider(create: (_) => RewardProvider()),
         ChangeNotifierProvider(create: (_) => BankProvider()), 
+        ChangeNotifierProvider(create: (_) => MentalLoadProvider()), // <--- Import Novo 
       ],
       // Inicia pela Splash Screen que fará o roteamento inteligente
       child: const NexoApp(initialLocation: '/splash'),
