@@ -95,18 +95,15 @@ class BankProvider extends ChangeNotifier {
     );
     await docRef.set(newTx.toMap());
 
-    // 2. Atualizar saldo do membro
-    // COMO O MEMBER PROVIDER É LOCAL POR ENQUANTO, NÃO VAMOS ATUALIZAR O FIRESTORE DO MEMBRO AQUI.
-    // A UI DEVE CHAMAR MemberProvider.addCoins() OU MemberProvider.spendCoins() LOCALMENTE.
-    
-    /* 
-    final memberRef = _firestore.collection('families').doc(_familyId).collection('members').doc(kidId);
-    if (type == 'credit') {
-      await memberRef.update({'coins': FieldValue.increment(amount.toInt())});
-    } else {
-      await memberRef.update({'coins': FieldValue.increment(-amount.toInt())});
+    // 2. Atualizar saldo do membro (Agora diretamente no Firestore!)
+    if (kidId != 'family') { // <--- Só atualiza saldo se for um membro real
+      final memberRef = _firestore.collection('families').doc(_familyId).collection('members').doc(kidId);
+      if (type == 'credit') {
+        await memberRef.update({'coins': FieldValue.increment(amount.toInt())});
+      } else {
+        await memberRef.update({'coins': FieldValue.increment(-amount.toInt())});
+      }
     }
-    */
   }
 
   // --- METAS ---

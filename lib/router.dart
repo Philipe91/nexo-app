@@ -15,7 +15,9 @@ import 'screens/cycle/cycle_settings_screen.dart';
 import 'screens/kid_mode/kid_mode_screen.dart'; 
 import 'screens/kid_mode/rewards_screen.dart'; // <--- Import Novo
 import 'screens/shopping/shopping_list_screen.dart'; // <--- Import Novo
-import 'package:nexo/screens/stats/statistics_screen.dart'; // <--- Nova Tela
+import 'package:nexo/screens/stats/statistics_screen.dart'; 
+import 'screens/ai/nexo_assistant_screen.dart';
+import 'screens/stats/mental_load_history_screen.dart'; // <--- Import Adicionado // <--- Import Novo
 import 'screens/shopping/meal_planner_screen.dart'; // <--- Import Novo
 import 'screens/checkin/checkin_screen.dart'; // <--- Import Novo
 import 'screens/scaffold_with_navbar.dart'; // <--- Import Novo para Navbar
@@ -44,6 +46,11 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
         path: '/stats',
         pageBuilder: (context, state) => _buildPageWithAnimation(
           context: context, state: state, child: const StatisticsScreen()),
+      ),
+      GoRoute(
+        path: '/assistant',
+        pageBuilder: (context, state) => _buildPageWithAnimation(
+          context: context, state: state, child: const NexoAssistantScreen()),
       ),
 
       // 1. INTRODUÇÃO
@@ -192,6 +199,11 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
       ),
 
       // 12. CHECK-IN SEMANAL
+      GoRoute(
+        path: '/mental-load-history',
+        pageBuilder: (context, state) => _buildPageWithAnimation(
+          context: context, state: state, child: const MentalLoadHistoryScreen()),
+      ),
       GoRoute(
         path: '/checkin',
         parentNavigatorKey: rootNavigatorKey,

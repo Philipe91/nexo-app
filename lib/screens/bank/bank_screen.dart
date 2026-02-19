@@ -293,8 +293,7 @@ class BankScreen extends StatelessWidget {
                  // Resgatar tudo (Botão de emergência ou desistência)
                  await context.read<BankProvider>().withdrawFromGoal(goal.id, goal.currentAmount, goal.kidId);
                  
-                 // Atualizar saldo local (Devolver dinheiro para a carteira)
-                 context.read<MemberProvider>().addXpAndCoins(goal.kidId, 0, goal.currentAmount.toInt());
+                 // Saldo atualizado automaticamente via BankProvider
 
                  Navigator.pop(ctx);
               }, 
@@ -305,9 +304,8 @@ class BankScreen extends StatelessWidget {
               final amount = double.tryParse(depositController.text) ?? 0;
               if (amount > 0 && amount <= currentBalance) {
                 await context.read<BankProvider>().addFundsToGoal(goal.id, amount, goal.kidId);
-                
-                // Atualizar saldo local (Debitar da carteira)
-                context.read<MemberProvider>().spendCoins(goal.kidId, amount.toInt());
+                 
+                 // Saldo atualizado automaticamente pelo BankProvider (Firestore)
 
                  Navigator.pop(ctx);
               } else {

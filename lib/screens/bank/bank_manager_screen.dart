@@ -120,12 +120,8 @@ class BankManagerScreen extends StatelessWidget {
                   isCredit ? 'credit' : 'debit'
                 );
 
-                // 2. Atualizar Saldo Localmente
-                if (isCredit) {
-                  context.read<MemberProvider>().addXpAndCoins(kidId, 0, amount.toInt());
-                } else {
-                  context.read<MemberProvider>().spendCoins(kidId, amount.toInt());
-                }
+                // 2. Atualizar Saldo (Agora automático pelo BankProvider)
+                // O BankProvider já atualiza o membro no Firestore.
 
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Transação realizada com sucesso!")));

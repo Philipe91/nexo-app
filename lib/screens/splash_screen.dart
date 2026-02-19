@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../core/providers/member_provider.dart';
+import '../core/providers/auth_provider.dart'; // <--- AuthProvider
+// import 'package:shared_preferences/shared_preferences.dart'; // Removido
+// import '../core/providers/member_provider.dart'; // Removido logicamente
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -15,28 +16,38 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _checkLoginStatus();
+    // Inicia a verificação assim que a tela monta
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkLoginStatus();
+    });
   }
 
   Future<void> _checkLoginStatus() async {
-    // 1. Aguarda um tempo mínimo para mostrar a logo
+    // 1. Aguarda um tempo mínimo para mostrar a logo (UX)
     await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
 
-    // 2. Verifica se existem dados salvos no dispositivo
-    final prefs = await SharedPreferences.getInstance();
-    final hasMembers = prefs.containsKey('members_data') && 
-                       (prefs.getString('members_data') != "[]");
-
-    // 3. Verifica também se o Provider já carregou
-    final memberProvider = context.read<MemberProvider>();
+    final authProvider = context.read<AuthProvider>();
     
-    // 4. Decide para onde ir
-    if (hasMembers || memberProvider.members.isNotEmpty) {
-      context.go('/'); // Vai para Home
+    // Pequeno delay para garantir que o AuthProvider teve tempo de inicializar
+    // (Caso o Firebase demore um pouco para responder o estado inicial)
+    if (authProvider.status == AuthGateStatus.initializing) {
+      // Loop simples de espera (com timeout)
+      int retries = 0;
+      while (authProvider.status == AuthGateStatus.initializing && retries < 10) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        retries++;
+      }
+    }
+
+    // 2. Decide para onde ir com base no status do AuthProvider
+    if (authProvider.status == AuthGateStatus.authenticatedInFamily) {
+      context.go('/'); // Home
+    } else if (authProvider.status == AuthGateStatus.authenticatedNoFamily) {
+      context.go('/setup-family'); // Completar cadastro
     } else {
-      context.go('/onboarding'); // Usuário novo
+      context.go('/onboarding'); // Intro / Login
     }
   }
 

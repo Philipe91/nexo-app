@@ -8,12 +8,13 @@ import 'router.dart';
 
 // --- IMPORTS DOS PROVIDERS ---
 import 'core/theme/app_theme.dart';
+import 'core/providers/auth_provider.dart';
+import 'core/providers/assistant_provider.dart'; // <--- Import Novo // <--- Import AuthProvider
 import 'core/providers/task_provider.dart';
 import 'core/providers/member_provider.dart';
 import 'core/providers/cycle_provider.dart';
 import 'core/providers/agreement_provider.dart';
 import 'core/providers/preferences_provider.dart';
-import 'core/providers/shopping_provider.dart';
 import 'core/providers/shopping_provider.dart';
 import 'core/providers/reward_provider.dart'; 
 import 'core/providers/bank_provider.dart'; // <--- Import Novo
@@ -45,15 +46,16 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()), 
+        ChangeNotifierProvider(create: (_) => AssistantProvider()), // <--- AI
         ChangeNotifierProvider(create: (_) => TaskProvider()),
         ChangeNotifierProvider(create: (_) => MemberProvider()),
         ChangeNotifierProvider(create: (_) => CycleProvider()),
         ChangeNotifierProvider(create: (_) => AgreementProvider()),
         ChangeNotifierProvider(create: (_) => PreferencesProvider()),
-        ChangeNotifierProvider(create: (_) => PreferencesProvider()),
         ChangeNotifierProvider(create: (_) => ShoppingProvider()),
         ChangeNotifierProvider(create: (_) => RewardProvider()),
-        ChangeNotifierProvider(create: (_) => BankProvider()), // <--- NOVO: Banco
+        ChangeNotifierProvider(create: (_) => BankProvider()), 
       ],
       // Inicia pela Splash Screen que fará o roteamento inteligente
       child: const NexoApp(initialLocation: '/splash'),

@@ -1,162 +1,189 @@
+import 'dart:async'; // Add StreamSubscription
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/member_model.dart';
+import '../../core/providers/reward_provider.dart'; // To add default rewards if needed
 
 class MemberProvider extends ChangeNotifier {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // TODO: Em um app real, usar ID da família do usuário logado
+  String get _familyId => 'default_family'; 
+  
   List<Member> _members = [];
+  StreamSubscription<QuerySnapshot>? _membersSubscription;
 
   List<Member> get members => _members;
 
   MemberProvider() {
-    loadMembers();
+    _init();
   }
 
-  // --- AÇÕES ---
+  Future<void> _init() async {
+    // 1. Verificar se precisa migrar dados locais para o Firestore
+    await _migrateLocalDataIfNeeded();
+    
+    // 2. Iniciar escuta do Firestore
+    _subscribeToMembers();
+  }
 
-  void addMember(String name, String color, {String role = 'adult', String relationship = 'Outro'}) {
-    final newId = DateTime.now().millisecondsSinceEpoch.toString();
+  // --- MIGRAÇÃO ---
+  Future<void> _migrateLocalDataIfNeeded() async {
+    final prefs = await SharedPreferences.getInstance();
+    final bool migrated = prefs.getBool('members_migrated_to_firestore') ?? false;
+
+    if (!migrated) {
+      if (prefs.containsKey('members_data')) {
+        final String data = prefs.getString('members_data')!;
+        try {
+          final List<dynamic> decodedList = jsonDecode(data);
+          final List<Member> localMembers = decodedList.map((item) => Member.fromMap(item)).toList();
+
+          if (localMembers.isNotEmpty) {
+            print("🚀 Migrando ${localMembers.length} membros locais para o Firestore...");
+            final batch = _firestore.batch();
+            final membersCollection = _firestore.collection('families').doc(_familyId).collection('members');
+
+            for (var member in localMembers) {
+              // Usa o ID existente ou gera um novo se for muito simples
+              final docRef = membersCollection.doc(member.id);
+              batch.set(docRef, member.toMap());
+            }
+
+            await batch.commit();
+            print("✅ Migração concluída!");
+          }
+        } catch (e) {
+          print("❌ Erro na migração: $e");
+        }
+      }
+      // Marca como migrado para não fazer de novo
+      await prefs.setBool('members_migrated_to_firestore', true);
+    }
+  }
+
+  // --- ESCUTAR DATA ---
+  void _subscribeToMembers() {
+    _membersSubscription = _firestore
+        .collection('families')
+        .doc(_familyId)
+        .collection('members')
+        .snapshots()
+        .listen((snapshot) {
+      _members = snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        // MemberModel espera DateTime. Firestore retorna Timestamp.
+        // Se o seu Member.fromMap já trata isso, ótimo. Se não, precisaríamos tratar.
+        // Assumindo que Member.fromMap pode precisar de juste se não lidar com Timestamp
+        if (data['joinedAt'] is Timestamp) {
+           data['joinedAt'] = (data['joinedAt'] as Timestamp).toDate().toIso8601String();
+        }
+        return Member.fromMap(data);
+      }).toList();
+      notifyListeners();
+    }, onError: (e) {
+      print("❌ Erro no Stream de Membros: $e");
+    });
+  }
+  
+  @override
+  void dispose() {
+    _membersSubscription?.cancel();
+    super.dispose();
+  }
+
+  // --- AÇÕES (Agora no Firestore) ---
+
+  Future<void> addMember(String name, String color, {String role = 'adult', String relationship = 'Outro'}) async {
+    final newId = DateTime.now().millisecondsSinceEpoch.toString(); // ID temp, Firestore gera se quiser
     final newMember = Member(
-      id: newId,
-      userId: newId, // Local ID as userID for now
-      familyId: 'local_family',
+      id: newId, 
+      userId: newId,
+      familyId: _familyId,
       name: name,
       role: role,
       color: color,
       joinedAt: DateTime.now(),
       relationship: relationship,
     );
-    _members.add(newMember);
-    saveMembers();
-    notifyListeners();
+    
+    // Salvar no Firestore com ID específico (ou .add() deixar gerar)
+    // Vamos usar .set com ID timestamp para manter compatibilidade com IDs existentes ou .add
+    // Se usarmos .doc(newMember.id).set(...), garantimos que o ID do modelo bate com o DOC.
+    await _firestore
+        .collection('families')
+        .doc(_familyId)
+        .collection('members')
+        .doc(newMember.id)
+        .set(newMember.toMap());
   }
 
-  // --- NOVO: GAMIFICATION ---
+  // --- GAMIFICATION (Agora Atualiza Firestore) ---
   
-  bool addXpAndCoins(String memberId, int xpAmount, int coinAmount) {
-    bool leveledUp = false;
-    final index = _members.indexWhere((m) => m.id == memberId);
-    if (index >= 0) {
-      final member = _members[index];
+  // Retorna Future<bool> agora por ser async
+  Future<bool> addXp(String memberId, int xpAmount) async {
+    // Busca referência do doc
+    final memberRef = _firestore.collection('families').doc(_familyId).collection('members').doc(memberId);
+    
+    // Usar transaction para ler e atualizar atomicamente (evitar race conditions)
+    return _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(memberRef);
+      if (!snapshot.exists) return false;
+
+      final data = snapshot.data()!;
+      if (data['joinedAt'] is Timestamp) {
+           data['joinedAt'] = (data['joinedAt'] as Timestamp).toDate().toIso8601String();
+      }
+      final member = Member.fromMap(data);
+
       int newXp = member.xp + xpAmount;
       int newLevel = _calculateLevel(newXp);
-      int newCoins = member.coins + coinAmount;
+      bool leveledUp = newLevel > member.level;
 
-      if (newLevel > member.level) {
-        leveledUp = true;
-      }
+      transaction.update(memberRef, {
+        'xp': newXp,
+        'level': newLevel,
+      });
 
-      final updatedMember = Member(
-        id: member.id,
-        userId: member.userId,
-        familyId: member.familyId,
-        name: member.name,
-        role: member.role,
-        color: member.color,
-        joinedAt: member.joinedAt,
-        xp: newXp,
-        level: newLevel,
-        coins: newCoins,
-        badges: member.badges,
-      );
-
-      // Atualiza localmente para feedback instantâneo e salva (se fosse Firebase, usaria update)
-      _members[index] = updatedMember;
-      saveMembers(); 
-      notifyListeners();
-    }
-    return leveledUp;
+      return leveledUp;
+    });
   }
 
-  bool spendCoins(String memberId, int amount) {
-    final index = _members.indexWhere((m) => m.id == memberId);
-    if (index >= 0) {
-      final member = _members[index];
-      if (member.coins >= amount) {
-        final updatedMember = Member(
-          id: member.id,
-          userId: member.userId,
-          familyId: member.familyId,
-          name: member.name,
-          role: member.role,
-          color: member.color,
-          joinedAt: member.joinedAt,
-          xp: member.xp,
-          level: member.level,
-          coins: member.coins - amount,
-          badges: member.badges,
-        );
-        _members[index] = updatedMember;
-        saveMembers();
-        notifyListeners();
-        return true; // Compra realizada
-      }
-    }
-    return false; // Saldo insuficiente
-  }
+  // spendCoins removido. Use BankProvider.addTransaction para debitar.
 
-  void unlockBadge(String memberId, String badgeId) {
-    final index = _members.indexWhere((m) => m.id == memberId);
-    if (index >= 0) {
-      final member = _members[index];
-      if (!member.badges.contains(badgeId)) {
-        final newBadges = List<String>.from(member.badges)..add(badgeId);
-        _members[index] = Member(
-          id: member.id,
-          userId: member.userId,
-          familyId: member.familyId,
-          name: member.name,
-          role: member.role,
-          color: member.color,
-          joinedAt: member.joinedAt,
-          xp: member.xp,
-          level: member.level,
-          badges: newBadges,
-        );
-        saveMembers();
-        notifyListeners();
-      }
-    }
+  Future<void> unlockBadge(String memberId, String badgeId) async {
+    final memberRef = _firestore.collection('families').doc(_familyId).collection('members').doc(memberId);
+    
+    // FieldValue.arrayUnion é perfeito para listas únicas no Firestore
+    await memberRef.update({
+      'badges': FieldValue.arrayUnion([badgeId])
+    });
   }
 
   int _calculateLevel(int xp) {
-    // Fórmula simples: Nível = 1 + (XP / 1000)
-    // Ex: 0-999 = Lvl 1, 1000-1999 = Lvl 2
     return 1 + (xp ~/ 1000);
   }
 
   // --- ATUALIZAR MEMBRO GENÉRICO ---
-  void updateMember(Member updatedMember) {
-    final index = _members.indexWhere((m) => m.id == updatedMember.id);
-    if (index >= 0) {
-      _members[index] = updatedMember;
-      saveMembers();
-      notifyListeners();
-    }
+  Future<void> updateMember(Member updatedMember) async {
+    await _firestore
+        .collection('families')
+        .doc(_familyId)
+        .collection('members')
+        .doc(updatedMember.id)
+        .update(updatedMember.toMap());
   }
 
-  void removeMember(String id) {
-    _members.removeWhere((member) => member.id == id);
-    saveMembers();
-    notifyListeners();
+  Future<void> removeMember(String id) async {
+    await _firestore
+        .collection('families')
+        .doc(_familyId)
+        .collection('members')
+        .doc(id)
+        .delete();
   }
 
-  // --- PERSISTÊNCIA ---
-
-  Future<void> saveMembers() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String data = jsonEncode(_members.map((m) => m.toMap()).toList());
-    await prefs.setString('members_data', data);
-  }
-
-  Future<void> loadMembers() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.containsKey('members_data')) {
-      final String data = prefs.getString('members_data')!;
-      // Decodifica a lista com segurança
-      final List<dynamic> decodedList = jsonDecode(data);
-      _members = decodedList.map((item) => Member.fromMap(item)).toList();
-      notifyListeners();
-    }
-  }
+  // Métodos de Persistência Local (saveMembers/loadMembers) removidos pois agora é cloud-first.
 }

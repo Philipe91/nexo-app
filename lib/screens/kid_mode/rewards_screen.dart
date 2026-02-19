@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/providers/reward_provider.dart';
+import '../../core/providers/bank_provider.dart';
 import '../../core/providers/member_provider.dart';
 import '../../core/widgets/glass_card.dart';
 
@@ -191,12 +192,19 @@ class RewardsScreen extends StatelessWidget {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancelar")),
           ElevatedButton(
-            onPressed: () {
-              final success = context.read<MemberProvider>().spendCoins(kidId, cost);
+            onPressed: () async {
+              // Debita via transação (BankProvider atualiza saldo)
+              await context.read<BankProvider>().addTransaction(
+                kidId, 
+                cost.toDouble(), 
+                "Compra: $rewardName", 
+                "debit"
+              );
+              
               Navigator.pop(context);
               
-              if (success) {
-                // Sucesso
+              // Sucesso (Assumindo que transação funciona. Idealmente checar erro)
+              if (context.mounted) {
                 showDialog(
                   context: context,
                   builder: (_) => const AlertDialog(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_animate/flutter_animate.dart'; // <--- A MÁGICA
+import 'package:flutter_animate/flutter_animate.dart'; 
 import 'package:google_fonts/google_fonts.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -18,25 +18,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // DADOS DAS TELAS
   final List<Map<String, dynamic>> _pages = [
     {
-      "title": "O fim da\nCarga Mental",
-      "subtitle": "Você sente que gerencia a casa sozinho(a)?",
-      "description": "O NEXO veio para tornar invisível o trabalho de lembrar de tudo. Vamos equilibrar a balança da sua família.",
+      "title": "Carga Mental Invisível?",
+      "subtitle": "VOCÊ NÃO ESTÁ SOZINHA(O)",
+      "description": "O NEXO equilibra a balança da casa. Organizamos quem Lembra, quem Decide e quem Executa.",
       "icon": Icons.balance_rounded,
-      "color": const Color(0xFF4D5BCE), // Azul Índigo
     },
     {
-      "title": "O Método\nL.D.E.",
-      "subtitle": "Uma tarefa tem 3 donos",
-      "description": "Não basta apenas Executar.\nAlguém teve que Lembrar.\nAlguém teve que Decidir.\nO NEXO divide esses papéis.",
-      "icon": Icons.psychology_rounded, // Cérebro
-      "color": const Color(0xFFE91E63), // Pink
+      "title": "Método L.D.E.",
+      "subtitle": "UMA TAREFA TEM 3 DONOS",
+      "description": "Não basta apenas Executar.\nO peso mental de Lembrar e Decidir também conta pontos aqui.",
+      "icon": Icons.psychology_rounded, 
     },
     {
-      "title": "Sua Mente\nLivre",
-      "subtitle": "Deixe o celular lembrar",
-      "description": "Nós avisamos você na hora certa, 1 hora antes ou 1 dia antes. Foque no que importa, deixe a memória com a gente.",
+      "title": "Sua Mente Livre",
+      "subtitle": "DEIXE O APP LEMBRAR",
+      "description": "Nós avisamos você na hora certa. Foque no que importa e deixe a memória com a gente.",
       "icon": Icons.notifications_active_rounded,
-      "color": const Color(0xFF4CAF50), // Verde
     },
   ];
 
@@ -46,34 +43,50 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     await prefs.setBool('seenOnboarding', true);
     
     if (mounted) {
-      context.go('/login'); // Agora manda para o Login, e não direto para a Home
+      context.go('/login'); 
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final currentPageData = _pages[_currentPage];
-    final Color pageColor = currentPageData['color'];
-
+    
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // --- FUNDO ANIMADO ---
-          // Círculo grande no topo mudando de cor
-          AnimatedPositioned(
-            duration: 800.ms,
-            curve: Curves.easeInOutBack,
-            top: -size.width * 0.5,
-            right: _currentPage.isEven ? -100 : -50,
-            child: AnimatedContainer(
-              duration: 600.ms,
-              width: size.width * 1.5,
-              height: size.width * 1.5,
+          // --- FUNDO GRADIENTE ---
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF4E5AE8), Color(0xFF8E9EFE)], // Cores do App
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+
+          // --- PADRÃO DE FUNDO (OPCIONAL) ---
+          Positioned(
+            top: -100,
+            right: -100,
+            child: Container(
+              width: 300,
+              height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: pageColor.withOpacity(0.1),
+                color: Colors.white.withOpacity(0.1),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -50,
+            left: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.1),
               ),
             ),
           ),
@@ -81,6 +94,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           SafeArea(
             child: Column(
               children: [
+                // PAGINAÇÃO
                 Expanded(
                   child: PageView.builder(
                     controller: _pageController,
@@ -88,60 +102,67 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     itemCount: _pages.length,
                     itemBuilder: (context, index) {
                       final page = _pages[index];
-                      // Usamos ValueKey para reiniciar a animação ao mudar de página
+                      // Conteúdo da Página
                       return Padding(
-                        key: ValueKey(index), 
                         padding: const EdgeInsets.symmetric(horizontal: 32.0),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // --- ÍCONE COM EFEITO ---
+                            // Ícone em Destaque (Glassmorphism)
                             Center(
                               child: Container(
                                 padding: const EdgeInsets.all(40),
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: (page['color'] as Color).withOpacity(0.1),
+                                  color: Colors.white.withOpacity(0.2),
+                                  border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 20,
+                                      spreadRadius: 5,
+                                    )
+                                  ]
                                 ),
                                 child: Icon(
                                   page['icon'],
                                   size: 80,
-                                  color: page['color'],
+                                  color: Colors.white,
                                 ),
                               )
                               .animate()
-                              .scale(duration: 600.ms, curve: Curves.easeOutBack) // Cresce
+                              .scale(duration: 600.ms, curve: Curves.easeOutBack)
                               .then()
-                              .shimmer(duration: 1200.ms, color: Colors.white.withOpacity(0.5)), // Brilha
+                              .shimmer(duration: 1200.ms, color: Colors.white.withOpacity(0.5)),
                             ),
 
                             const SizedBox(height: 60),
 
-                            // --- SUBTÍTULO (Pequeno) ---
+                            // Subtítulo
                             Text(
                               (page['subtitle'] as String).toUpperCase(),
                               style: GoogleFonts.inter(
-                                fontSize: 14,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                color: page['color'],
-                                letterSpacing: 1.2,
+                                color: Colors.white70,
+                                letterSpacing: 2.0,
                               ),
                             )
                             .animate()
                             .fade(duration: 500.ms)
                             .slideX(begin: -0.2, end: 0, duration: 500.ms, curve: Curves.easeOut),
 
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 12),
 
-                            // --- TÍTULO (Grande) ---
+                            // Título
                             Text(
                               page['title'],
-                              style: GoogleFonts.inter(
-                                fontSize: 42,
+                              style: GoogleFonts.outfit(
+                                fontSize: 40,
                                 height: 1.1,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.black87,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
                             )
                             .animate()
@@ -150,13 +171,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                             const SizedBox(height: 24),
 
-                            // --- DESCRIÇÃO ---
+                            // Descrição
                             Text(
                               page['description'],
                               style: GoogleFonts.inter(
                                 fontSize: 18,
                                 height: 1.5,
-                                color: Colors.grey.shade600,
+                                color: Colors.white.withOpacity(0.9),
                               ),
                             )
                             .animate()
@@ -169,33 +190,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                 ),
 
-                // --- RODAPÉ ---
+                // BARRA INFERIOR
                 Padding(
                   padding: const EdgeInsets.all(32.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Bolinhas de progresso
+                      // Indicadores de Progresso
                       Row(
                         children: List.generate(_pages.length, (index) {
                           return AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
                             margin: const EdgeInsets.only(right: 8),
-                            height: 8,
-                            width: _currentPage == index ? 32 : 8,
+                            height: 6,
+                            width: _currentPage == index ? 24 : 6,
                             decoration: BoxDecoration(
                               color: _currentPage == index 
-                                  ? pageColor 
-                                  : Colors.grey.shade300,
-                              borderRadius: BorderRadius.circular(4),
+                                  ? Colors.white 
+                                  : Colors.white.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(3),
                             ),
                           );
                         }),
                       ),
 
-                      // Botão Próximo
-                      ElevatedButton(
-                        onPressed: () {
+                      // Botão de Avançar
+                      GestureDetector(
+                        onTap: () {
                           if (_currentPage == _pages.length - 1) {
                             _finishOnboarding();
                           } else {
@@ -205,21 +226,42 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             );
                           }
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black87,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                          shape: RoundedRectangleBorder(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              )
+                            ]
                           ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          _currentPage == _pages.length - 1 ? "COMEÇAR" : "PRÓXIMO",
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _currentPage == _pages.length - 1 ? "COMEÇAR" : "PRÓXIMO",
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF4E5AE8),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.arrow_forward_rounded,
+                                color: const Color(0xFF4E5AE8),
+                                size: 20,
+                              ),
+                            ],
+                          ),
                         ),
                       ).animate(target: _currentPage == _pages.length - 1 ? 1 : 0)
-                       .scaleXY(end: 1.1, duration: 300.ms) // Aumenta um pouco no final
+                       .scaleXY(end: 1.05, duration: 300.ms) 
                     ],
                   ),
                 ),

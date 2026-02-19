@@ -326,11 +326,11 @@ class _KidModeScreenState extends State<KidModeScreen> {
               final xpEarned = task.effort * 50;
               final coinsEarned = task.effort * 10; // 10 moedas por nível de esforço
 
-              // Adiciona XP e Moedas no membro (LOCAL)
-              final leveledUp = context.read<MemberProvider>().addXpAndCoins(kid.id, xpEarned, coinsEarned);
+              // 1. Adiciona XP (Level Up)
+              final leveledUp = await context.read<MemberProvider>().addXp(kid.id, xpEarned);
 
-              // REGISTRA TRANSAÇÃO NO BANCO (FIRESTORE)
-              context.read<BankProvider>().addTransaction(
+              // 2. REGISTRA TRANSAÇÃO NO BANCO (Isso adiciona as moedas automaticamente)
+              await context.read<BankProvider>().addTransaction(
                 kid.id, 
                 coinsEarned.toDouble(), 
                 "Missão: ${task.title}", 

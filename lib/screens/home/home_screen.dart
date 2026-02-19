@@ -40,9 +40,67 @@ class HomeScreen extends StatelessWidget {
       gradientEnd = const Color(0xFFef473a);
     }
 
+    // --- Lógica de Saudação (NOVO) ---
+    final hour = DateTime.now().hour;
+    String greeting = "Bom dia";
+    if (hour >= 12 && hour < 18) {
+      greeting = "Boa tarde";
+    } else if (hour >= 18) {
+      greeting = "Boa noite";
+    }
+    
+    // Pega o nome do primeiro membro ou "Família" se não tiver ninguém cadastrado
+    final userName = memberProvider.members.isNotEmpty ? memberProvider.members.first.name.split(' ').first : "Família";
+
     return Scaffold(
       extendBodyBehindAppBar: true,
-      drawer: const AppDrawer(),
+      endDrawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: const BoxDecoration(
+                color: Color(0xFF4E5AE8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                   const CircleAvatar(
+                     backgroundColor: Colors.white,
+                     child: Icon(Icons.person, color: Color(0xFF4E5AE8)),
+                   ),
+                   const SizedBox(height: 12),
+                   Text("Menu", style: GoogleFonts.fredoka(fontSize: 24, color: Colors.white)),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Configurações'),
+              onTap: () {
+                // Navegar
+                context.pop(); // Fecha drawer
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.account_circle),
+              title: const Text('Perfil'),
+              onTap: () {
+                context.pop();
+              },
+            ),
+             const Divider(),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: const Text('Sobre o Nexo'),
+              onTap: () {
+                context.pop();
+              },
+            ),
+          ],
+        ),
+      ),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -65,7 +123,13 @@ class HomeScreen extends StatelessWidget {
           )
         ),
         actions: [
-          // Ícone removido pois agora tem o Widget principal
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 28),
+              onPressed: () => Scaffold.of(context).openEndDrawer(),
+            ),
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Column(
@@ -91,63 +155,97 @@ class HomeScreen extends StatelessWidget {
                 // Conteúdo do Header (Status)
                 SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 60, 24, 0), // Espaço para AppBar
-                    child: GlassCard(
-                      color: Colors.white,
-                      opacity: 0.95, // Quase sólido para evitar "branco estranho"
-                      borderRadius: BorderRadius.circular(24),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text("CARGA MENTAL", 
-                                  style: TextStyle(
-                                    fontSize: 12, 
-                                    fontWeight: FontWeight.bold, 
-                                    color: Colors.grey.shade600,
-                                    letterSpacing: 1.2
-                                  )
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 0), // Reduzi topo pois a saudação flutua
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // --- SAUDAÇÃO (NOVO LOCAL) ---
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16, left: 4),
+                          child: Row(
+                            children: [
+                              Text(
+                                "$greeting, ",
+                                style: GoogleFonts.fredoka(
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w400,
                                 ),
-                                Text("${totalLoad.toInt()}%", 
-                                  style: TextStyle(
-                                    fontSize: 16, 
-                                    fontWeight: FontWeight.w900, 
-                                    color: statusColor
-                                  )
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(statusText, 
-                              style: TextStyle(
-                                fontSize: 24, 
-                                fontWeight: FontWeight.bold, 
-                                color: statusColor,
-                                height: 1.2
-                              )
-                            ),
-                            const SizedBox(height: 16),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: LinearProgressIndicator(
-                                value: totalLoad / 100,
-                                minHeight: 16, // Barra robusta
-                                backgroundColor: const Color(0xFFF0F4F8), // Fundo sutil
-                                valueColor: AlwaysStoppedAnimation(statusColor),
                               ),
-                            ),
-                          ],
+                              Text(
+                                userName,
+                                style: GoogleFonts.fredoka(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        GestureDetector( // <--- Mudado para GestureDetector
+                      onTap: () => context.push('/mental-load-history'), // <--- Navegação adicionada
+                      child: GlassCard(
+                        color: Colors.white,
+                        opacity: 0.95, // Quase sólido para evitar "branco estranho"
+                        borderRadius: BorderRadius.circular(24),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text("CARGA MENTAL", 
+                                    style: TextStyle(
+                                      fontSize: 12, 
+                                      fontWeight: FontWeight.bold, 
+                                      color: Colors.grey.shade600,
+                                      letterSpacing: 1.2
+                                    )
+                                  ),
+                                  Text("${totalLoad.toInt()}%", 
+                                    style: TextStyle(
+                                      fontSize: 16, 
+                                      fontWeight: FontWeight.w900, 
+                                      color: statusColor
+                                    )
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(statusText, 
+                                style: TextStyle(
+                                  fontSize: 24, 
+                                  fontWeight: FontWeight.bold, 
+                                  color: statusColor,
+                                  height: 1.2
+                                )
+                              ),
+                              const SizedBox(height: 16),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: LinearProgressIndicator(
+                                  value: totalLoad / 100,
+                                  minHeight: 16, // Barra robusta
+                                  backgroundColor: const Color(0xFFF0F4F8), // Fundo sutil
+                                  valueColor: AlwaysStoppedAnimation(statusColor),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-              ],
+                  ], // Closing children list for Column
+                ), // Closing Column
+              ), // Closing Padding
+            ), // Closing SafeArea
+          ], // Closing Stack children list
             ),
           ),
 
@@ -166,87 +264,162 @@ class HomeScreen extends StatelessWidget {
                       final cycleInfo = cycleProvider.getCurrentPhaseInfo(memberId);
 
                       if (cycleInfo['hasData'] == true) {
+                        final Color phaseColor = cycleInfo['color'] as Color;
+                        final String phaseName = cycleInfo['phase'] as String;
+                        final IconData phaseIcon = cycleInfo['icon'] as IconData;
+                        final String tip = cycleInfo['tip'] as String;
+                        final int currentDay = cycleInfo['day'] as int;
+                        // Assumindo ciclo de 28 dias para a barra de progresso (poderia vir do provider)
+                        final double progress = (currentDay / 28).clamp(0.0, 1.0);
+
                         return Container(
                           margin: const EdgeInsets.only(bottom: 24),
                           decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
+                            // Gradiente Sutil de Fundo
+                            gradient: LinearGradient(
+                              colors: [Colors.white, phaseColor.withOpacity(0.15)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(28), // Mais arredondado
                             boxShadow: [
-                              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))
+                              BoxShadow(color: phaseColor.withOpacity(0.2), blurRadius: 15, offset: const Offset(0, 8))
                             ]
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              children: [
-                                Row(
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => context.push('/cycle-settings'),
+                              borderRadius: BorderRadius.circular(28),
+                              child: Padding(
+                                padding: const EdgeInsets.all(20.0),
+                                child: Column(
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: (cycleInfo['color'] as Color).withOpacity(0.1),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(cycleInfo['icon'], color: cycleInfo['color']),
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Ícone Grande com Fundo
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            shape: BoxShape.circle,
+                                            boxShadow: [
+                                              BoxShadow(color: phaseColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))
+                                            ]
+                                          ),
+                                          child: Icon(phaseIcon, color: phaseColor, size: 32),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        
+                                        // Infos Principais
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                "Bio-Ritmo", 
+                                                style: GoogleFonts.fredoka(fontSize: 14, color: Colors.grey.shade600, fontWeight: FontWeight.w500)
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                phaseName, 
+                                                style: GoogleFonts.fredoka(
+                                                  fontWeight: FontWeight.w600, 
+                                                  fontSize: 20,
+                                                  color: Colors.black87
+                                                )
+                                              ),
+                                              const SizedBox(height: 8),
+                                              // Barra de Progresso do Ciclo
+                                              ClipRRect(
+                                                borderRadius: BorderRadius.circular(6),
+                                                child: LinearProgressIndicator(
+                                                  value: progress,
+                                                  backgroundColor: Colors.grey.shade200,
+                                                  valueColor: AlwaysStoppedAnimation(phaseColor),
+                                                  minHeight: 6,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
+                                    const SizedBox(height: 20),
+                                    
+                                    // Card de Dica
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.6),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(color: phaseColor.withOpacity(0.1)),
+                                      ),
+                                      child: Row(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            cycleInfo['phase'], 
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold, 
-                                              fontSize: 16,
-                                              color: cycleInfo['color']
+                                          Icon(Icons.tips_and_updates_outlined, size: 20, color: phaseColor), // Usei tips_and_updates se disponível ou lightbulb
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              tip, 
+                                              style: TextStyle(fontSize: 14, height: 1.4, color: Colors.grey.shade800),
                                             )
                                           ),
-                                          const Text("Bio-Ritmo da Casa", style: TextStyle(fontSize: 12, color: Colors.grey)),
                                         ],
                                       ),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.settings, color: Colors.grey),
-                                      onPressed: () => context.push('/cycle-settings'),
                                     )
                                   ],
                                 ),
-                                const SizedBox(height: 12),
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: (cycleInfo['color'] as Color).withOpacity(0.05),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: (cycleInfo['color'] as Color).withOpacity(0.2)),
-                                  ),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text("💡 ", style: TextStyle(fontSize: 16)),
-                                      Expanded(
-                                        child: Text(
-                                          cycleInfo['tip'], 
-                                          style: const TextStyle(fontSize: 13, height: 1.4, color: Colors.black87),
-                                        )
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              ],
+                              ),
                             ),
                           ),
                         );
                       } else {
-                        return Container(
+                        return Container( // Estado Vazio (Sem Dados)
                           margin: const EdgeInsets.only(bottom: 24),
-                          child: GlassCard(
-                            child: ListTile(
-                              leading: const Icon(Icons.favorite_border, color: Colors.pinkAccent),
-                              title: const Text("Configurar Bio-Ritmo"),
-                              subtitle: const Text("Toque para acompanhar o ciclo e receber dicas."),
-                              onTap: () => context.push('/cycle-settings'),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: Colors.grey.shade100),
+                             boxShadow: [
+                              BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))
+                            ]
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                               onTap: () => context.push('/cycle-settings'),
+                               borderRadius: BorderRadius.circular(24),
+                               child: Padding(
+                                 padding: const EdgeInsets.all(20),
+                                 child: Row(
+                                   children: [
+                                     Container(
+                                       padding: const EdgeInsets.all(12),
+                                       decoration: BoxDecoration(
+                                         color: Colors.pinkAccent.withOpacity(0.1),
+                                         shape: BoxShape.circle,
+                                       ),
+                                       child: const Icon(Icons.favorite_border, color: Colors.pinkAccent),
+                                     ),
+                                     const SizedBox(width: 16),
+                                     Expanded(
+                                       child: Column(
+                                         crossAxisAlignment: CrossAxisAlignment.start,
+                                         children: [
+                                           Text("Configurar Bio-Ritmo", style: GoogleFonts.fredoka(fontWeight: FontWeight.bold, fontSize: 16)),
+                                           const SizedBox(height: 4),
+                                           Text("Toque para acompanhar o ciclo.", style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                                         ],
+                                       ),
+                                     ),
+                                     const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
+                                   ],
+                                 ),
+                               ),
                             ),
                           ),
                         );
