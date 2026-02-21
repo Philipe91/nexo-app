@@ -8,25 +8,43 @@ import '../../core/providers/reward_provider.dart'; // To add default rewards if
 
 class MemberProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  // TODO: Em um app real, usar ID da família do usuário logado
-  String get _familyId => 'default_family'; 
+
+  String? _familyId;
+  String? _currentUserId;
   
   List<Member> _members = [];
   StreamSubscription<QuerySnapshot>? _membersSubscription;
 
   List<Member> get members => _members;
 
-  MemberProvider() {
-    _init();
+  // Membro atual (usuário logado)
+  Member? get currentMember {
+    if (_currentUserId == null) return null;
+    try {
+      return _members.firstWhere((m) => m.userId == _currentUserId);
+    } catch (_) {
+      return _members.isNotEmpty ? _members.first : null;
+    }
   }
 
-  Future<void> _init() async {
-    // 1. Verificar se precisa migrar dados locais para o Firestore
-    await _migrateLocalDataIfNeeded();
-    
-    // 2. Iniciar escuta do Firestore
+  // --- GUARDS DE PERMISSÃO ---
+  bool canInviteMembers() => currentMember?.role == 'admin';
+  bool canRemoveMember(Member target) {
+    final me = currentMember;
+    if (me == null) return false;
+    if (me.role != 'admin') return false;
+    return target.userId != me.userId; // Admin não se remove
+  }
+
+  // --- INIT (chamado após login) ---
+  void init(String familyId, String userId) {
+    if (_familyId == familyId && _currentUserId == userId) return;
+    _familyId = familyId;
+    _currentUserId = userId;
     _subscribeToMembers();
   }
+
+  MemberProvider();
 
   // --- MIGRAÇÃO ---
   Future<void> _migrateLocalDataIfNeeded() async {
@@ -63,8 +81,10 @@ class MemberProvider extends ChangeNotifier {
     }
   }
 
-  // --- ESCUTAR DATA ---
   void _subscribeToMembers() {
+    _membersSubscription?.cancel();
+    if (_familyId == null) return;
+
     _membersSubscription = _firestore
         .collection('families')
         .doc(_familyId)
@@ -74,9 +94,6 @@ class MemberProvider extends ChangeNotifier {
       _members = snapshot.docs.map((doc) {
         final data = doc.data();
         data['id'] = doc.id;
-        // MemberModel espera DateTime. Firestore retorna Timestamp.
-        // Se o seu Member.fromMap já trata isso, ótimo. Se não, precisaríamos tratar.
-        // Assumindo que Member.fromMap pode precisar de juste se não lidar com Timestamp
         if (data['joinedAt'] is Timestamp) {
            data['joinedAt'] = (data['joinedAt'] as Timestamp).toDate().toIso8601String();
         }
@@ -84,7 +101,7 @@ class MemberProvider extends ChangeNotifier {
       }).toList();
       notifyListeners();
     }, onError: (e) {
-      print("❌ Erro no Stream de Membros: $e");
+      debugPrint('❌ Erro no Stream de Membros: $e');
     });
   }
   
@@ -96,22 +113,20 @@ class MemberProvider extends ChangeNotifier {
 
   // --- AÇÕES (Agora no Firestore) ---
 
-  Future<void> addMember(String name, String color, {String role = 'adult', String relationship = 'Outro'}) async {
-    final newId = DateTime.now().millisecondsSinceEpoch.toString(); // ID temp, Firestore gera se quiser
+  Future<void> addMember(String name, String color,
+      {String role = 'adult', String relationship = 'Outro'}) async {
+    if (_familyId == null) return;
+    final newId = DateTime.now().millisecondsSinceEpoch.toString();
     final newMember = Member(
-      id: newId, 
+      id: newId,
       userId: newId,
-      familyId: _familyId,
+      familyId: _familyId!,
       name: name,
       role: role,
       color: color,
       joinedAt: DateTime.now(),
       relationship: relationship,
     );
-    
-    // Salvar no Firestore com ID específico (ou .add() deixar gerar)
-    // Vamos usar .set com ID timestamp para manter compatibilidade com IDs existentes ou .add
-    // Se usarmos .doc(newMember.id).set(...), garantimos que o ID do modelo bate com o DOC.
     await _firestore
         .collection('families')
         .doc(_familyId)

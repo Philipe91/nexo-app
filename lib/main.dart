@@ -47,19 +47,40 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()), 
-        ChangeNotifierProvider(create: (_) => AssistantProvider()), // <--- AI
-        ChangeNotifierProvider(create: (_) => TaskProvider()),
-        ChangeNotifierProvider(create: (_) => MemberProvider()),
+        // Auth é base — sempre primeiro
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => AssistantProvider()),
+
+        // TaskProvider e MemberProvider dependem do AuthProvider para obter familyId real
+        ChangeNotifierProxyProvider<AuthProvider, TaskProvider>(
+          create: (_) => TaskProvider(),
+          update: (_, auth, task) {
+            final t = task ?? TaskProvider();
+            if (auth.hasFamily && auth.appUser != null && auth.firebaseUser != null) {
+              t.init(auth.appUser!.currentFamilyId!, auth.firebaseUser!.uid);
+            }
+            return t;
+          },
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, MemberProvider>(
+          create: (_) => MemberProvider(),
+          update: (_, auth, member) {
+            final m = member ?? MemberProvider();
+            if (auth.hasFamily && auth.appUser != null && auth.firebaseUser != null) {
+              m.init(auth.appUser!.currentFamilyId!, auth.firebaseUser!.uid);
+            }
+            return m;
+          },
+        ),
+
         ChangeNotifierProvider(create: (_) => CycleProvider()),
         ChangeNotifierProvider(create: (_) => AgreementProvider()),
         ChangeNotifierProvider(create: (_) => PreferencesProvider()),
         ChangeNotifierProvider(create: (_) => ShoppingProvider()),
         ChangeNotifierProvider(create: (_) => RewardProvider()),
-        ChangeNotifierProvider(create: (_) => BankProvider()), 
-        ChangeNotifierProvider(create: (_) => MentalLoadProvider()), // <--- Import Novo 
+        ChangeNotifierProvider(create: (_) => BankProvider()),
+        ChangeNotifierProvider(create: (_) => MentalLoadProvider()),
       ],
-      // Inicia pela Splash Screen que fará o roteamento inteligente
       child: const NexoApp(initialLocation: '/splash'),
     ),
   );

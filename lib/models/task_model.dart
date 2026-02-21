@@ -9,10 +9,14 @@ class Task {
   final String whoDecides;
   final String whoExecutes;
 
+  // --- Autoria e Família ---
+  final String createdBy;   // userId de quem criou (controla permissões)
+  final String familyId;    // família à qual a tarefa pertence
+
   // --- Campos Essenciais ---
   final List<String> days; // Ex: ['SEG', 'QUA']
   final DateTime? lastCompletedDate; // Para saber se já fez hoje
-  final DateTime createdAt; // <--- O CAMPO QUE O ERRO ESTÁ PEDINDO
+  final DateTime createdAt;
 
   // --- Campos de Notificação ---
   final bool notifyAtTime;    
@@ -43,8 +47,10 @@ class Task {
     required this.whoRemembers,
     required this.whoDecides,
     required this.whoExecutes,
-    required this.createdAt, 
-    this.days = const [], 
+    required this.createdAt,
+    this.createdBy = '',
+    this.familyId = '',
+    this.days = const [],
     this.lastCompletedDate,
     this.notifyAtTime = false,
     this.notify1hBefore = false,
@@ -64,6 +70,8 @@ class Task {
       'whoRemembers': whoRemembers,
       'whoDecides': whoDecides,
       'whoExecutes': whoExecutes,
+      'createdBy': createdBy,
+      'familyId': familyId,
       'createdAt': Timestamp.fromDate(createdAt),
       'days': days,
       'lastCompletedDate': lastCompletedDate != null ? Timestamp.fromDate(lastCompletedDate!) : null,
@@ -92,8 +100,10 @@ class Task {
       whoRemembers: map['whoRemembers'] ?? '',
       whoDecides: map['whoDecides'] ?? '',
       whoExecutes: map['whoExecutes'] ?? '',
+      createdBy: map['createdBy'] ?? '',
+      familyId: map['familyId'] ?? '',
       createdAt: toDateTime(map['createdAt']) ?? DateTime.now(),
-      days: List<String>.from(map['days'] ?? []), 
+      days: List<String>.from(map['days'] ?? []),
       lastCompletedDate: toDateTime(map['lastCompletedDate']),
       notifyAtTime: map['notifyAtTime'] ?? false,
       notify1hBefore: map['notify1hBefore'] ?? false,

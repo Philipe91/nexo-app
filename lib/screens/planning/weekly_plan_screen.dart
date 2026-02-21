@@ -19,6 +19,9 @@ class _WeeklyPlanScreenState extends State<WeeklyPlanScreen> with SingleTickerPr
   // Mapeamento de dias para facilitar
   final List<String> _days = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom", "Flex"];
 
+  // Códigos usados no campo Task.days
+  final List<String> _dayCodes = ["SEG", "TER", "QUA", "QUI", "SEX", "SAB", "DOM"];
+
   @override
   void initState() {
     super.initState();
@@ -68,10 +71,13 @@ class _WeeklyPlanScreenState extends State<WeeklyPlanScreen> with SingleTickerPr
             // Index 0 a 6 = Dias da semana (1 a 7 no modelo)
             // Index 7 = Flexível (null no modelo)
             
-            final targetWeekDay = index < 7 ? index + 1 : null;
-            
+            // Index 0-6 = dias da semana (SEG...DOM), Index 7 = Flex (sem dia definido)
             final tasksForDay = allTasks.where((t) {
-              return t.weekDay == targetWeekDay;
+              if (index < 7) {
+                return t.days.contains(_dayCodes[index]);
+              } else {
+                return t.days.isEmpty; // Tarefas "Flex" não têm dia definido
+              }
             }).toList();
 
             return _buildDayList(tasksForDay, index);
