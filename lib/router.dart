@@ -26,6 +26,7 @@ import 'screens/settings/settings_screen.dart'; // <--- Import Novo
 import 'screens/settings/manage_rewards_screen.dart'; 
 import 'screens/bank/bank_screen.dart'; // <--- Import Novo
 import 'screens/bank/bank_manager_screen.dart'; // <--- Import Novo
+import 'screens/profile/profile_screen.dart'; // <--- Perfil do usuário
 
 // Configuração Centralizada de Rotas
 // Configuração Centralizada de Rotas
@@ -51,6 +52,11 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
         path: '/assistant',
         pageBuilder: (context, state) => _buildPageWithAnimation(
           context: context, state: state, child: const NexoAssistantScreen()),
+      ),
+      GoRoute(
+        path: '/profile',
+        pageBuilder: (context, state) => _buildPageWithAnimation(
+          context: context, state: state, child: const ProfileScreen()),
       ),
 
       // 1. INTRODUÇÃO

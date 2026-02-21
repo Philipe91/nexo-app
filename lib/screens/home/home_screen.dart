@@ -49,8 +49,10 @@ class HomeScreen extends StatelessWidget {
       greeting = "Boa noite";
     }
     
-    // Pega o nome do primeiro membro ou "Família" se não tiver ninguém cadastrado
-    final userName = memberProvider.members.isNotEmpty ? memberProvider.members.first.name.split(' ').first : "Família";
+    // Usa o membro atual (usuário logado) se disponível
+    final currentMember = memberProvider.currentMember;
+    final userName = currentMember?.name.split(' ').first ??
+        (memberProvider.members.isNotEmpty ? memberProvider.members.first.name.split(' ').first : 'Família');
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -104,15 +106,28 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: Color(0xFF4E5AE8)), // Azul Moon Heart
+      leading: Tooltip(
+        message: 'Ver meu perfil',
+        child: Semantics(
+          label: 'Botão de perfil',
+          button: true,
+          child: GestureDetector(
+            onTap: () => context.push('/profile'),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: CircleAvatar(
+                backgroundColor: currentMember != null
+                    ? Color(int.tryParse(currentMember.color) ?? 0xFF4D5BCE)
+                    : const Color(0xFF4D5BCE),
+                child: Text(
+                  userName.isNotEmpty ? userName[0].toUpperCase() : 'N',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
-            onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
+      ),
         centerTitle: true,
         title: const Text(
           'NEXO', 
