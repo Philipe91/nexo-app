@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../core/providers/auth_provider.dart'; // <--- AuthProvider
-// import 'package:shared_preferences/shared_preferences.dart'; // Removido
-// import '../core/providers/member_provider.dart'; // Removido logicamente
+
+import '../core/providers/auth_provider.dart';
+import '../core/theme/app_theme.dart';
+import '../core/theme/tokens.dart';
+import '../core/widgets/ambient_background.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,85 +14,122 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+  late final AnimationController _logo = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..forward();
+
   @override
   void initState() {
     super.initState();
-    // Inicia a verificação assim que a tela monta
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkLoginStatus();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _route());
   }
 
-  Future<void> _checkLoginStatus() async {
-    // 1. Aguarda um tempo mínimo para mostrar a logo (UX)
-    await Future.delayed(const Duration(seconds: 2));
+  @override
+  void dispose() {
+    _logo.dispose();
+    super.dispose();
+  }
 
+  Future<void> _route() async {
+    await Future.delayed(const Duration(milliseconds: 1400));
     if (!mounted) return;
-
-    final authProvider = context.read<AuthProvider>();
-    
-    // Pequeno delay para garantir que o AuthProvider teve tempo de inicializar
-    // (Caso o Firebase demore um pouco para responder o estado inicial)
-    if (authProvider.status == AuthGateStatus.initializing) {
-      // Loop simples de espera (com timeout)
-      int retries = 0;
-      while (authProvider.status == AuthGateStatus.initializing && retries < 10) {
-        await Future.delayed(const Duration(milliseconds: 500));
-        retries++;
-      }
+    final auth = context.read<AuthProvider>();
+    var retries = 0;
+    while (auth.status == AuthGateStatus.initializing && retries < 10) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      retries++;
     }
-
-    // 2. Decide para onde ir com base no status do AuthProvider
-    if (authProvider.status == AuthGateStatus.authenticatedInFamily) {
-      context.go('/'); // Home
-    } else if (authProvider.status == AuthGateStatus.authenticatedNoFamily) {
-      context.go('/setup-family'); // Completar cadastro
-    } else {
-      context.go('/onboarding'); // Intro / Login
+    if (!mounted) return;
+    switch (auth.status) {
+      case AuthGateStatus.authenticatedInFamily:
+        context.go('/');
+      case AuthGateStatus.authenticatedNoFamily:
+        context.go('/setup-family');
+      default:
+        context.go('/onboarding');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: theme.colorScheme.primary,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.0, end: 1.0),
-              duration: const Duration(seconds: 1),
-              curve: Curves.elasticOut,
-              builder: (context, value, child) {
-                return Transform.scale(
-                  scale: value,
-                  child: const Icon(
-                    Icons.home_work_rounded, 
-                    size: 80, 
-                    color: Colors.white
+      body: AmbientBackground(
+        intensity: 1.4,
+        child: Center(
+          child: AnimatedBuilder(
+            animation: _logo,
+            builder: (_, __) {
+              final t = Curves.easeOutCubic.transform(_logo.value);
+              return Opacity(
+                opacity: t,
+                child: Transform.translate(
+                  offset: Offset(0, (1 - t) * 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _Wordmark(dark: dark),
+                      const SizedBox(height: NexoSpace.md),
+                      Text(
+                        'Equilibrando o invisível',
+                        style: TextStyle(
+                          fontSize: NexoText.sm,
+                          letterSpacing: 1.2,
+                          color: dark ? NexoColors.darkFgMuted : NexoColors.lightFgMuted,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: NexoSpace.xxl),
+                      SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: dark ? NexoColors.indigoSoft : NexoColors.indigo,
+                        ),
+                      ),
+                    ],
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              "NEXO",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
-              ),
-            ),
-            const SizedBox(height: 24),
-            const CircularProgressIndicator(color: Colors.white),
-          ],
+                ),
+              );
+            },
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _Wordmark extends StatelessWidget {
+  const _Wordmark({required this.dark});
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = dark ? NexoColors.darkFg : NexoColors.lightFg;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: NexoColors.indigo,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: NexoElevation.glow(NexoColors.indigo, opacity: 0.35),
+          ),
+          alignment: Alignment.center,
+          child: const Icon(Icons.hub_rounded, color: Colors.white, size: 20),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          'NEXO',
+          style: AppTheme.display(size: 32, weight: FontWeight.w800, color: fg),
+        ),
+      ],
     );
   }
 }

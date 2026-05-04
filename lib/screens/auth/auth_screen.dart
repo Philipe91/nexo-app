@@ -1,11 +1,13 @@
-import 'dart:ui';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // <--- O CARA DO LOGIN
-import 'package:cloud_firestore/cloud_firestore.dart'; // <--- O CARA DO BANCO DE DADOS
-import '../../core/widgets/nexo_loading.dart'; 
+
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/tokens.dart';
+import '../../core/widgets/ambient_background.dart';
+import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_text_field.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -15,221 +17,178 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  bool _isLogin = true; 
-  bool _isLoading = false; 
-  
-  final _emailController = TextEditingController();
-  final _passController = TextEditingController();
-  final _nameController = TextEditingController(); 
+  bool _isLogin = true;
+  bool _loading = false;
 
-  // --- FUNÇÃO REAL DE AUTENTICAÇÃO ---
-  void _submitAuth() async {
-    final email = _emailController.text.trim();
-    final password = _passController.text.trim();
-    final name = _nameController.text.trim();
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
 
-    if (email.isEmpty || password.isEmpty) {
-      _showError("Preencha email e senha.");
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
+    _nameCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final email = _emailCtrl.text.trim();
+    final pass = _passCtrl.text.trim();
+    final name = _nameCtrl.text.trim();
+
+    if (email.isEmpty || pass.isEmpty) {
+      _toast('Preencha e-mail e senha.');
+      return;
+    }
+    if (!_isLogin && name.isEmpty) {
+      _toast('Diga seu nome para começar.');
       return;
     }
 
-    setState(() => _isLoading = true);
-
+    setState(() => _loading = true);
     try {
       if (_isLogin) {
-        // --- LOGICA DE LOGIN ---
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: email, 
-          password: password
-        );
+        await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: pass);
       } else {
-        // --- LOGICA DE CRIAR CONTA (SIGN UP) ---
-        if (name.isEmpty) {
-          _showError("Por favor, diga seu nome.");
-          setState(() => _isLoading = false);
-          return;
-        }
-
-        // 1. Cria o usuário no Authentication (Email/Senha)
-        UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: email, 
-          password: password
-        );
-
-        // 2. Grava os dados na pasta 'users' do Firestore
-        await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
-          'uid': userCredential.user!.uid,
+        final cred = await FirebaseAuth.instance
+            .createUserWithEmailAndPassword(email: email, password: pass);
+        await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set({
+          'uid': cred.user!.uid,
           'email': email,
           'name': name,
           'createdAt': FieldValue.serverTimestamp(),
-          'currentFamilyId': null, // Ainda sem família
+          'currentFamilyId': null,
         });
       }
-
-      // Se não deu erro, navega!
-      if (mounted) {
-        context.go('/setup-family'); 
-      }
-
+      if (mounted) context.go('/setup-family');
     } on FirebaseAuthException catch (e) {
-      // Tratamento de erros comuns
-      String msg = "Ocorreu um erro.";
-      if (e.code == 'weak-password') msg = "A senha é muito fraca.";
-      if (e.code == 'email-already-in-use') msg = "Este e-mail já está cadastrado.";
-      if (e.code == 'invalid-email') msg = "E-mail inválido.";
-      if (e.code == 'user-not-found' || e.code == 'wrong-password') msg = "Email ou senha incorretos."; // Segurança
-      
-      _showError(msg);
-    } catch (e) {
-      _showError("Erro inesperado: $e");
+      _toast(_mapError(e.code));
+    } catch (_) {
+      _toast('Erro inesperado. Tente novamente.');
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.redAccent,
-      ),
-    );
+  String _mapError(String code) {
+    switch (code) {
+      case 'weak-password':
+        return 'A senha precisa ter pelo menos 6 caracteres.';
+      case 'email-already-in-use':
+        return 'Este e-mail já está cadastrado.';
+      case 'invalid-email':
+        return 'E-mail inválido.';
+      case 'user-not-found':
+      case 'wrong-password':
+      case 'invalid-credential':
+        return 'E-mail ou senha incorretos.';
+      default:
+        return 'Não foi possível autenticar agora.';
+    }
+  }
+
+  void _toast(String msg) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const NexoLoading(message: "Conectando com o servidor...");
-    }
-
-    final theme = Theme.of(context);
-    final size = MediaQuery.of(context).size;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final fg = dark ? NexoColors.darkFg : NexoColors.lightFg;
+    final fgMuted = dark ? NexoColors.darkFgMuted : NexoColors.lightFgMuted;
+    final accent = dark ? NexoColors.indigoSoft : NexoColors.indigo;
 
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF4E5AE8), Color(0xFF8E9EFE)], // Moon Heart Gradient
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+      body: AmbientBackground(
+        intensity: 0.9,
         child: SafeArea(
           child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  
-                  // --- LOGO ANIMADA ---
-                  Center(
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2), 
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))
-                        ]
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 460),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(NexoSpace.xl),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: NexoSpace.xxl),
+                    _Brand(dark: dark),
+                    const SizedBox(height: NexoSpace.xxxl),
+                    Text(
+                      _isLogin ? 'Bem-vinda de volta' : 'Crie sua conta',
+                      style: AppTheme.display(size: 32, weight: FontWeight.w800, color: fg),
+                    ),
+                    const SizedBox(height: NexoSpace.sm),
+                    Text(
+                      _isLogin
+                          ? 'Entre para continuar onde parou.'
+                          : 'Comece a equilibrar a casa em minutos.',
+                      style: TextStyle(fontSize: NexoText.base, color: fgMuted, height: 1.5),
+                    ),
+                    const SizedBox(height: NexoSpace.xxl),
+
+                    if (!_isLogin) ...[
+                      AppTextField(
+                        label: 'Seu nome',
+                        controller: _nameCtrl,
+                        icon: Icons.person_outline,
+                        textCapitalization: TextCapitalization.words,
+                        autofillHints: const [AutofillHints.name],
                       ),
-                      child: const Icon(
-                        Icons.grid_view_rounded, 
-                        size: 50,
-                        color: Colors.white,
-                      ),
+                      const SizedBox(height: NexoSpace.lg),
+                    ],
+                    AppTextField(
+                      label: 'E-mail',
+                      controller: _emailCtrl,
+                      icon: Icons.alternate_email_rounded,
+                      keyboardType: TextInputType.emailAddress,
+                      textCapitalization: TextCapitalization.none,
+                      autofillHints: const [AutofillHints.email],
                     ),
-                  )
-                  .animate()
-                  .scale(duration: 800.ms, curve: Curves.elasticOut),
-
-                  const SizedBox(height: 48),
-
-                  // Títulos
-                  Text(
-                    _isLogin ? "Bem-vindo" : "Nova Conta",
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.nunito(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                    const SizedBox(height: NexoSpace.lg),
+                    AppTextField(
+                      label: 'Senha',
+                      controller: _passCtrl,
+                      icon: Icons.lock_outline_rounded,
+                      obscureText: true,
+                      autofillHints: [_isLogin ? AutofillHints.password : AutofillHints.newPassword],
+                      helper: _isLogin ? null : 'Mínimo 6 caracteres.',
                     ),
-                  ).animate().fade().slideY(begin: 0.3, end: 0, delay: 200.ms),
-                  
-                  const SizedBox(height: 8),
-                  
-                  Text(
-                    _isLogin 
-                      ? "Faça login para continuar" 
-                      : "Junte-se ao NEXO hoje",
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.nunito(fontSize: 16, color: Colors.white70),
-                  ).animate().fade(delay: 300.ms),
 
-                  const SizedBox(height: 48),
-
-                  // Campos
-                  if (!_isLogin) ...[
-                    _buildMoonInput(label: "Seu Nome", icon: Icons.person_outline, controller: _nameController)
-                    .animate().fade().slideY(begin: 0.2, end: 0),
-                    const SizedBox(height: 16),
-                  ],
-                  
-                  _buildMoonInput(label: "E-mail", icon: Icons.email_outlined, controller: _emailController)
-                  .animate().fade(delay: 100.ms).slideY(begin: 0.2, end: 0),
-                  
-                  const SizedBox(height: 16),
-                  
-                  _buildMoonInput(label: "Senha", icon: Icons.lock_outline, controller: _passController, isPassword: true)
-                  .animate().fade(delay: 200.ms).slideY(begin: 0.2, end: 0),
-
-                  const SizedBox(height: 40),
-
-                  // Botão Branco (Estilo Moon Heart)
-                  ElevatedButton(
-                    onPressed: _submitAuth,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      backgroundColor: Colors.white,
-                      foregroundColor: theme.primaryColor,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                      elevation: 8,
-                      shadowColor: Colors.black.withOpacity(0.2),
+                    const SizedBox(height: NexoSpace.xl),
+                    AppButton(
+                      label: _isLogin ? 'Entrar' : 'Criar conta',
+                      loading: _loading,
+                      onPressed: _submit,
                     ),
-                    child: Text(
-                      _isLogin ? "ENTRAR" : "CRIAR CONTA",
-                      style: GoogleFonts.nunito(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                  ).animate().scale(delay: 400.ms),
-
-                  const SizedBox(height: 24),
-
-                  // Alternar Login/Cadastro
-                  TextButton(
-                    onPressed: () => setState(() => _isLogin = !_isLogin),
-                    child: RichText(
-                      text: TextSpan(
-                        text: _isLogin ? "Ainda não tem conta? " : "Já possui conta? ",
-                        style: GoogleFonts.nunito(color: Colors.white70),
-                        children: [
-                          TextSpan(
-                            text: _isLogin ? "Cadastre-se" : "Entrar",
+                    const SizedBox(height: NexoSpace.md),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _isLogin ? 'Ainda não tem conta? ' : 'Já possui conta? ',
+                          style: TextStyle(color: fgMuted, fontSize: NexoText.sm),
+                        ),
+                        TextButton(
+                          onPressed: () => setState(() => _isLogin = !_isLogin),
+                          style: TextButton.styleFrom(
+                            foregroundColor: accent,
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          ),
+                          child: Text(
+                            _isLogin ? 'Cadastre-se' : 'Entrar',
                             style: const TextStyle(
-                              color: Colors.white, 
-                              fontWeight: FontWeight.bold,
-                              decoration: TextDecoration.underline,
-                              decorationColor: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: NexoText.sm,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -237,42 +196,37 @@ class _AuthScreenState extends State<AuthScreen> {
       ),
     );
   }
+}
 
-  Widget _buildMoonInput({
-    required String label, 
-    required IconData icon, 
-    required TextEditingController controller,
-    bool isPassword = false
-  }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
+class _Brand extends StatelessWidget {
+  const _Brand({required this.dark});
+  final bool dark;
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1), // Menos opacidade para mostrar o blur
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.2)), // Borda sutil
+            color: NexoColors.indigo,
+            borderRadius: BorderRadius.circular(11),
+            boxShadow: NexoElevation.glow(NexoColors.indigo, opacity: 0.30),
           ),
-          child: TextField(
-            controller: controller,
-            obscureText: isPassword,
-            style: const TextStyle(color: Colors.white),
-            cursorColor: Colors.white,
-            decoration: InputDecoration(
-              filled: false, // Importante para o efeito glass funcionar (não usar o branco do tema)
-              labelText: label,
-              labelStyle: const TextStyle(color: Colors.white70),
-              prefixIcon: Icon(icon, color: Colors.white70),
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-              floatingLabelBehavior: FloatingLabelBehavior.auto,
-            ),
+          alignment: Alignment.center,
+          child: const Icon(Icons.hub_rounded, color: Colors.white, size: 22),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          'NEXO',
+          style: AppTheme.display(
+            size: 28,
+            weight: FontWeight.w800,
+            color: dark ? NexoColors.darkFg : NexoColors.lightFg,
           ),
         ),
-      ),
+      ],
     );
   }
 }

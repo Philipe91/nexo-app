@@ -1,142 +1,314 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'tokens.dart';
+
+/// AppTheme — versão "SaaS Boutique + Cinema Dark".
+///
+/// Tipografia dual: Plus Jakarta Sans (display) + Inter (body) +
+/// JetBrains Mono (números tabulares).
 class AppTheme {
-  // Cores Moon Heart
-  static const Color primary = Color(0xFF4E5AE8);    // Azul Índigo Vibrante
-  static const Color secondary = Color(0xFF8E9EFE);  // Azul Percal / Light
-  static const Color accent = Color(0xFFFFD740);     // Amarelo para destaques (estrelas, etc)
-  
-  static const Color background = Color(0xFFF8F9FE); // Branco com leve tint azul
-  static const Color surface = Colors.white;         
-  static const Color textPrimary = Color(0xFF2D3142); // Cinza Escuro Azulado
-  static const Color textSecondary = Color(0xFF9C9DB9); // Cinza Claro
+  AppTheme._();
 
-  // Cores Dark Mode (Adaptadas)
-  static const Color darkBackground = Color(0xFF2D3142); 
-  static const Color darkSurface = Color(0xFF393D5E);    
-  static const Color darkText = Color(0xFFE0E0E0);       
+  // Compatibilidade retroativa — vários arquivos legados ainda referenciam
+  // `AppTheme.primary`, `AppTheme.primaryGradient`, etc. Mantemos os símbolos
+  // apontando para os tokens novos pra não quebrar build durante a migração.
+  static const Color primary = NexoColors.indigo;
+  static const Color secondary = NexoColors.indigoSoft;
+  static const Color accent = NexoColors.warning;
+  static const Color background = NexoColors.lightBg;
+  static const Color surface = NexoColors.lightSurface;
+  static const Color textPrimary = NexoColors.lightFg;
+  static const Color textSecondary = NexoColors.lightFgMuted;
+  static const Color darkBackground = NexoColors.darkBg;
+  static const Color darkSurface = NexoColors.darkSurface;
+  static const Color darkText = NexoColors.darkFg;
 
-  // Gradient Principal (Para uso nos widgets)
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF4E5AE8), Color(0xFF8E9EFE)],
+    colors: [NexoColors.indigo, NexoColors.indigoSoft],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  // --- TEMA CLARO ---
+  // ── Type styles (light) ───────────────────────────────────────────────────
+  static TextStyle _display(double size, {FontWeight weight = FontWeight.w700, Color? color}) =>
+      GoogleFonts.plusJakartaSans(
+        fontSize: size,
+        fontWeight: weight,
+        height: 1.15,
+        letterSpacing: -0.4,
+        color: color,
+      );
+
+  static TextStyle _body(double size, {FontWeight weight = FontWeight.w400, Color? color}) =>
+      GoogleFonts.inter(
+        fontSize: size,
+        fontWeight: weight,
+        height: 1.45,
+        color: color,
+      );
+
+  static TextTheme _textTheme({required Color fg, required Color fgMuted}) {
+    return TextTheme(
+      displayLarge: _display(NexoText.xxxl, weight: FontWeight.w800, color: fg),
+      displayMedium: _display(NexoText.xxl, weight: FontWeight.w800, color: fg),
+      displaySmall: _display(NexoText.xl, weight: FontWeight.w700, color: fg),
+      headlineMedium: _display(NexoText.lg, weight: FontWeight.w700, color: fg),
+      headlineSmall: _display(NexoText.base, weight: FontWeight.w700, color: fg),
+      titleLarge: _body(NexoText.base, weight: FontWeight.w600, color: fg),
+      titleMedium: _body(NexoText.md, weight: FontWeight.w600, color: fg),
+      bodyLarge: _body(NexoText.base, color: fg),
+      bodyMedium: _body(NexoText.md, color: fg),
+      bodySmall: _body(NexoText.sm, color: fgMuted),
+      labelLarge: _body(NexoText.md, weight: FontWeight.w600, color: fg),
+      labelMedium: _body(NexoText.sm, weight: FontWeight.w500, color: fgMuted),
+      labelSmall: _body(NexoText.xs, weight: FontWeight.w500, color: fgMuted),
+    );
+  }
+
+  // ── Light ─────────────────────────────────────────────────────────────────
   static ThemeData get lightTheme {
+    final scheme = ColorScheme(
+      brightness: Brightness.light,
+      primary: NexoColors.indigo,
+      onPrimary: Colors.white,
+      secondary: NexoColors.indigoSoft,
+      onSecondary: Colors.white,
+      tertiary: NexoColors.warning,
+      onTertiary: Colors.white,
+      error: NexoColors.danger,
+      onError: Colors.white,
+      surface: NexoColors.lightSurface,
+      onSurface: NexoColors.lightFg,
+      surfaceContainerHighest: NexoColors.lightSurfaceMuted,
+      outline: NexoColors.lightBorder,
+      outlineVariant: NexoColors.lightBorder,
+    );
+
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      scaffoldBackgroundColor: background,
-      
-      // Definição de Cores
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primary,
-        background: background,
-        surface: surface,
-        onSurface: textPrimary,
-        primary: primary,
-        secondary: secondary,
-        tertiary: accent, 
-        brightness: Brightness.light,
+      scaffoldBackgroundColor: NexoColors.lightBg,
+      colorScheme: scheme,
+      splashFactory: InkSparkle.splashFactory,
+      textTheme: _textTheme(fg: NexoColors.lightFg, fgMuted: NexoColors.lightFgMuted),
+
+      iconTheme: const IconThemeData(color: NexoColors.lightFg, size: 22),
+
+      appBarTheme: AppBarTheme(
+        backgroundColor: NexoColors.lightBg,
+        foregroundColor: NexoColors.lightFg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        titleTextStyle: _display(NexoText.lg, weight: FontWeight.w700, color: NexoColors.lightFg),
       ),
 
-      // Tipografia Nunito (Estilo Avenir)
-      textTheme: GoogleFonts.nunitoTextTheme().copyWith(
-        displayLarge: GoogleFonts.nunito(fontWeight: FontWeight.w800, color: textPrimary),
-        displayMedium: GoogleFonts.nunito(fontWeight: FontWeight.w800, color: textPrimary),
-        bodyLarge: GoogleFonts.nunito(color: textPrimary),
-        bodyMedium: GoogleFonts.nunito(color: textPrimary),
+      cardTheme: CardThemeData(
+        color: NexoColors.lightSurface,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(NexoRadius.lg),
+          side: const BorderSide(color: NexoColors.lightBorder),
+        ),
       ),
 
-      // Botões Arredondados
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: primary,
+          backgroundColor: NexoColors.indigo,
           foregroundColor: Colors.white,
-          elevation: 4,
-          shadowColor: primary.withOpacity(0.4),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)), // Bem redondo
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-          textStyle: GoogleFonts.nunito(fontWeight: FontWeight.bold, fontSize: 16),
+          minimumSize: const Size.fromHeight(52),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(NexoRadius.md)),
+          textStyle: _body(NexoText.base, weight: FontWeight.w600),
         ),
       ),
 
-      // Inputs Modernos
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
-        hintStyle: GoogleFonts.nunito(color: textSecondary),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20), 
-          borderSide: BorderSide.none, // Sem borda visível por padrão (estilo clean)
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: const BorderSide(color: Colors.transparent), 
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: const BorderSide(color: primary, width: 2),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: NexoColors.lightFg,
+          side: const BorderSide(color: NexoColors.lightBorder),
+          minimumSize: const Size.fromHeight(52),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(NexoRadius.md)),
+          textStyle: _body(NexoText.base, weight: FontWeight.w600),
         ),
       ),
-      
-      cardTheme: const CardThemeData(
-        color: Colors.white,
-        elevation: 8,
-        shadowColor: Color(0x264E5AE8), 
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(24))),
-        margin: EdgeInsets.all(8),
+
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: NexoColors.lightSurface,
+        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        hintStyle: _body(NexoText.md, color: NexoColors.lightFgMuted),
+        labelStyle: _body(NexoText.md, color: NexoColors.lightFgMuted),
+        floatingLabelBehavior: FloatingLabelBehavior.auto,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(NexoRadius.md),
+          borderSide: const BorderSide(color: NexoColors.lightBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(NexoRadius.md),
+          borderSide: const BorderSide(color: NexoColors.lightBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(NexoRadius.md),
+          borderSide: const BorderSide(color: NexoColors.indigo, width: 1.5),
+        ),
+      ),
+
+      dividerTheme: const DividerThemeData(
+        color: NexoColors.lightBorder,
+        thickness: 1,
+        space: 1,
+      ),
+
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: NexoColors.lightSurface.withOpacity(0.92),
+        indicatorColor: NexoColors.indigoGlow,
+        height: 64,
+        elevation: 0,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        labelTextStyle: WidgetStatePropertyAll(
+          _body(NexoText.xs, weight: FontWeight.w600, color: NexoColors.lightFg),
+        ),
+        iconTheme: WidgetStatePropertyAll(
+          const IconThemeData(color: NexoColors.lightFgMuted, size: 22),
+        ),
+      ),
+
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: NexoColors.lightFg,
+        contentTextStyle: _body(NexoText.md, color: Colors.white),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(NexoRadius.md)),
       ),
     );
   }
 
-  // --- TEMA ESCURO ---
+  // ── Dark (Cinema) ─────────────────────────────────────────────────────────
   static ThemeData get darkTheme {
+    final scheme = ColorScheme(
+      brightness: Brightness.dark,
+      primary: NexoColors.indigoSoft,
+      onPrimary: Colors.white,
+      secondary: NexoColors.indigo,
+      onSecondary: Colors.white,
+      tertiary: NexoColors.warningDark,
+      onTertiary: Colors.black,
+      error: NexoColors.dangerDark,
+      onError: Colors.white,
+      surface: NexoColors.darkSurface,
+      onSurface: NexoColors.darkFg,
+      surfaceContainerHighest: NexoColors.darkSurfaceMuted,
+      outline: NexoColors.darkBorder,
+      outlineVariant: NexoColors.darkBorder,
+    );
+
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: darkBackground,
-      
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primary,
-        background: darkBackground,
-        surface: darkSurface,
-        onSurface: darkText,
-        primary: const Color(0xFF8E9EFE), // Usamos o tom mais claro no dark
-        secondary: const Color(0xFF4E5AE8),
-        brightness: Brightness.dark,
+      scaffoldBackgroundColor: NexoColors.darkBg,
+      colorScheme: scheme,
+      splashFactory: InkSparkle.splashFactory,
+      textTheme: _textTheme(fg: NexoColors.darkFg, fgMuted: NexoColors.darkFgMuted),
+
+      iconTheme: const IconThemeData(color: NexoColors.darkFg, size: 22),
+
+      appBarTheme: AppBarTheme(
+        backgroundColor: NexoColors.darkBg,
+        foregroundColor: NexoColors.darkFg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        titleTextStyle: _display(NexoText.lg, weight: FontWeight.w700, color: NexoColors.darkFg),
       ),
 
-      textTheme: GoogleFonts.nunitoTextTheme().apply(
-        bodyColor: darkText,
-        displayColor: darkText,
+      cardTheme: CardThemeData(
+        color: NexoColors.darkSurface,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(NexoRadius.lg),
+          side: const BorderSide(color: NexoColors.darkBorder),
+        ),
       ),
 
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: const Color(0xFF4E5AE8),
+          backgroundColor: NexoColors.indigoSoft,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+          minimumSize: const Size.fromHeight(52),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(NexoRadius.md)),
+          textStyle: _body(NexoText.base, weight: FontWeight.w600),
         ),
       ),
-      
+
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: NexoColors.darkFg,
+          side: const BorderSide(color: NexoColors.darkBorder),
+          minimumSize: const Size.fromHeight(52),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(NexoRadius.md)),
+          textStyle: _body(NexoText.base, weight: FontWeight.w600),
+        ),
+      ),
+
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: darkSurface,
-        hintStyle: GoogleFonts.nunito(color: Colors.white38),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+        fillColor: NexoColors.darkSurfaceMuted,
+        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        hintStyle: _body(NexoText.md, color: NexoColors.darkFgMuted),
+        labelStyle: _body(NexoText.md, color: NexoColors.darkFgMuted),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(NexoRadius.md),
+          borderSide: const BorderSide(color: NexoColors.darkBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(NexoRadius.md),
+          borderSide: const BorderSide(color: NexoColors.darkBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(NexoRadius.md),
+          borderSide: const BorderSide(color: NexoColors.indigoSoft, width: 1.5),
+        ),
       ),
-      
-      cardTheme: const CardThemeData(
-        color: darkSurface,
+
+      dividerTheme: const DividerThemeData(
+        color: NexoColors.darkBorder,
+        thickness: 1,
+        space: 1,
+      ),
+
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: NexoColors.darkSurface.withOpacity(0.92),
+        indicatorColor: NexoColors.indigoGlow,
+        height: 64,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(24))),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        labelTextStyle: WidgetStatePropertyAll(
+          _body(NexoText.xs, weight: FontWeight.w600, color: NexoColors.darkFg),
+        ),
+        iconTheme: WidgetStatePropertyAll(
+          const IconThemeData(color: NexoColors.darkFgMuted, size: 22),
+        ),
+      ),
+
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: NexoColors.darkSurface,
+        contentTextStyle: _body(NexoText.md, color: NexoColors.darkFg),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(NexoRadius.md),
+          side: const BorderSide(color: NexoColors.darkBorder),
+        ),
       ),
     );
   }
+
+  /// Texto monoespaçado pra números, códigos de convite, valores tabulares.
+  static TextStyle mono({double size = NexoText.md, FontWeight weight = FontWeight.w500, Color? color}) =>
+      GoogleFonts.jetBrainsMono(fontSize: size, fontWeight: weight, color: color, letterSpacing: 0);
+
+  /// Helper de display (Plus Jakarta Sans) — pra hero/títulos especiais.
+  static TextStyle display({double size = NexoText.xxl, FontWeight weight = FontWeight.w800, Color? color}) =>
+      _display(size, weight: weight, color: color);
 }

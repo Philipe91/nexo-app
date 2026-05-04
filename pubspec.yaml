@@ -32,7 +32,7 @@ dependencies:
     sdk: flutter
   # Adicione estas duas linhas:
   go_router: ^13.0.0
-  google_fonts: ^5.1.0
+  google_fonts: ^8.1.0
 
   cupertino_icons: ^1.0.2
   provider: ^6.1.5+1
