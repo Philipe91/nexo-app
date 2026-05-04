@@ -4,6 +4,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/models/task_model.dart';
+import '../../core/providers/handoff_provider.dart';
 import '../../core/providers/member_provider.dart';
 import '../../core/providers/task_provider.dart';
 import '../../core/theme/app_theme.dart';
@@ -15,6 +16,7 @@ import '../../core/widgets/app_chip.dart';
 import '../../core/widgets/app_segmented_control.dart';
 import '../../core/widgets/app_toast.dart';
 import 'add_responsibility_screen.dart' show SeasonalSeedSheet;
+import 'handoff_sheet.dart';
 
 enum _Filter { hoje, todas, sazonais }
 
@@ -30,6 +32,74 @@ class ResponsibilitiesScreen extends StatefulWidget {
 class _ResponsibilitiesScreenState extends State<ResponsibilitiesScreen> {
   _Filter _filter = _Filter.hoje;
   String? _memberFilter; // nome do membro (compatível com whoExecutes)
+
+  Future<void> _showActions(BuildContext context, Task task, bool hasActiveHandoff) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final fg = dark ? NexoColors.darkFg : NexoColors.lightFg;
+    return showModalBottomSheet(
+      context: context,
+      backgroundColor: dark ? NexoColors.darkSurface : NexoColors.lightSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(NexoRadius.xl)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 10),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: dark ? NexoColors.darkBorderStrong : NexoColors.lightBorderStrong,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: NexoSpace.lg),
+              ListTile(
+                leading: const Icon(LucideIcons.helpingHand, color: NexoColors.indigo),
+                title: Text(
+                  hasActiveHandoff ? 'Bastão já está em turno' : 'Passar o bastão',
+                  style: TextStyle(color: fg, fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  hasActiveHandoff
+                      ? 'Aguarde o turno atual encerrar.'
+                      : 'Transferir essa tarefa por alguns dias.',
+                ),
+                enabled: !hasActiveHandoff,
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  HandoffSheet.show(context, task);
+                },
+              ),
+              ListTile(
+                leading: const Icon(LucideIcons.edit3),
+                title: Text('Editar', style: TextStyle(color: fg, fontWeight: FontWeight.w600)),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  context.push('/responsibilities/edit', extra: task);
+                },
+              ),
+              ListTile(
+                leading: Icon(LucideIcons.trash2, color: NexoColors.danger),
+                title: Text('Excluir',
+                    style: TextStyle(color: NexoColors.danger, fontWeight: FontWeight.w600)),
+                onTap: () async {
+                  Navigator.of(ctx).pop();
+                  await context.read<TaskProvider>().removeTask(task.id);
+                  if (!mounted) return;
+                  AppToast.show(context, 'Tarefa removida', kind: AppToastKind.info);
+                },
+              ),
+              const SizedBox(height: NexoSpace.lg),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,35 +212,47 @@ class _ResponsibilitiesScreenState extends State<ResponsibilitiesScreen> {
                         onSeed: () => SeasonalSeedSheet.show(context),
                         onCreate: () => context.push('/responsibilities/add'),
                       )
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(
-                            NexoSpace.xl, NexoSpace.sm, NexoSpace.xl, 100),
-                        itemCount: filtered.length,
-                        itemBuilder: (_, i) => Padding(
-                          padding: const EdgeInsets.only(bottom: NexoSpace.md),
-                          child: _TaskTile(
-                            task: filtered[i],
-                            members: members,
-                            onComplete: () async {
-                              final completed =
-                                  await taskProvider.toggleTaskCompletion(filtered[i].id);
-                              if (!mounted) return;
-                              AppToast.show(
-                                context,
-                                completed ? 'Tarefa concluída' : 'Concluído desfeito',
-                                kind: AppToastKind.success,
+                    : Consumer<HandoffProvider>(
+                        builder: (ctx, handoffProvider, _) {
+                          return ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(
+                                NexoSpace.xl, NexoSpace.sm, NexoSpace.xl, 100),
+                            itemCount: filtered.length,
+                            itemBuilder: (_, i) {
+                              final task = filtered[i];
+                              final activeHandoff = handoffProvider.activeFor(task.id);
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: NexoSpace.md),
+                                child: _TaskTile(
+                                  task: task,
+                                  activeHandoff: activeHandoff,
+                                  members: members,
+                                  onComplete: () async {
+                                    final completed =
+                                        await taskProvider.toggleTaskCompletion(task.id);
+                                    if (!mounted) return;
+                                    AppToast.show(
+                                      context,
+                                      completed ? 'Tarefa concluída' : 'Concluído desfeito',
+                                      kind: AppToastKind.success,
+                                    );
+                                  },
+                                  onEdit: () =>
+                                      context.push('/responsibilities/edit', extra: task),
+                                  onLongPress: () => _showActions(context, task, activeHandoff != null),
+                                  onDelete: () async {
+                                    await taskProvider.removeTask(task.id);
+                                    if (!mounted) return;
+                                    AppToast.show(context, 'Tarefa removida',
+                                        kind: AppToastKind.info);
+                                  },
+                                  fg: fg,
+                                  fgMuted: fgMuted,
+                                ),
                               );
                             },
-                            onEdit: () => context.push('/responsibilities/edit', extra: filtered[i]),
-                            onDelete: () async {
-                              await taskProvider.removeTask(filtered[i].id);
-                              if (!mounted) return;
-                              AppToast.show(context, 'Tarefa removida', kind: AppToastKind.info);
-                            },
-                            fg: fg,
-                            fgMuted: fgMuted,
-                          ),
-                        ),
+                          );
+                        },
                       ),
               ),
             ],
@@ -184,18 +266,22 @@ class _ResponsibilitiesScreenState extends State<ResponsibilitiesScreen> {
 class _TaskTile extends StatelessWidget {
   const _TaskTile({
     required this.task,
+    required this.activeHandoff,
     required this.members,
     required this.onComplete,
     required this.onEdit,
+    required this.onLongPress,
     required this.onDelete,
     required this.fg,
     required this.fgMuted,
   });
 
   final Task task;
+  final dynamic activeHandoff;
   final List<dynamic> members;
   final VoidCallback onComplete;
   final VoidCallback onEdit;
+  final VoidCallback onLongPress;
   final VoidCallback onDelete;
   final Color fg;
   final Color fgMuted;
@@ -230,13 +316,22 @@ class _TaskTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _effortColor();
     final isDone = task.isCompletedToday;
+    final ho = activeHandoff;
+    final hasHandoff = ho != null;
 
-    return AppCard(
-      onTap: onEdit,
-      padding: const EdgeInsets.all(NexoSpace.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return GestureDetector(
+      onLongPress: onLongPress,
+      child: AppCard(
+        onTap: onEdit,
+        padding: const EdgeInsets.all(NexoSpace.lg),
+        glow: hasHandoff ? NexoColors.indigo : null,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (hasHandoff) ...[
+              _HandoffBanner(handoff: ho),
+              const SizedBox(height: NexoSpace.md),
+            ],
           Row(
             children: [
               // Checkbox custom
@@ -315,6 +410,54 @@ class _TaskTile extends StatelessWidget {
                   color: NexoColors.indigo,
                 ),
             ],
+          ),
+        ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HandoffBanner extends StatelessWidget {
+  const _HandoffBanner({required this.handoff});
+  final dynamic handoff;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final accent = dark ? NexoColors.indigoSoft : NexoColors.indigo;
+    final fg = dark ? NexoColors.darkFg : NexoColors.lightFg;
+    final fgMuted = dark ? NexoColors.darkFgMuted : NexoColors.lightFgMuted;
+    final dd = handoff.endDate.day.toString().padLeft(2, '0');
+    final mm = handoff.endDate.month.toString().padLeft(2, '0');
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: accent.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(NexoRadius.sm),
+        border: Border.all(color: accent.withOpacity(0.20)),
+      ),
+      child: Row(
+        children: [
+          Icon(LucideIcons.helpingHand, size: 14, color: accent),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Em turno com ${handoff.toMemberName}',
+              style: TextStyle(
+                fontSize: NexoText.xs,
+                fontWeight: FontWeight.w700,
+                color: fg,
+              ),
+            ),
+          ),
+          Text(
+            'até $dd/$mm',
+            style: TextStyle(
+              fontSize: NexoText.xs,
+              color: fgMuted,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),

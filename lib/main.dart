@@ -19,6 +19,7 @@ import 'core/providers/shopping_provider.dart';
 import 'core/providers/reward_provider.dart'; 
 import 'core/providers/bank_provider.dart';
 import 'core/providers/mental_load_provider.dart'; // <--- Import Novo
+import 'core/providers/handoff_provider.dart';
 import 'core/services/notification_service.dart';
 
 // --- ARQUIVO GERADO PELO FLUTTERFIRE ---
@@ -80,6 +81,18 @@ void main() async {
         ChangeNotifierProvider(create: (_) => RewardProvider()),
         ChangeNotifierProvider(create: (_) => BankProvider()),
         ChangeNotifierProvider(create: (_) => MentalLoadProvider()),
+
+        // Handoff (passar o bastão) — depende do AuthProvider
+        ChangeNotifierProxyProvider<AuthProvider, HandoffProvider>(
+          create: (_) => HandoffProvider(),
+          update: (_, auth, handoff) {
+            final h = handoff ?? HandoffProvider();
+            if (auth.hasFamily && auth.appUser != null && auth.firebaseUser != null) {
+              h.init(auth.appUser!.currentFamilyId!, auth.firebaseUser!.uid);
+            }
+            return h;
+          },
+        ),
       ],
       child: const NexoApp(initialLocation: '/splash'),
     ),
