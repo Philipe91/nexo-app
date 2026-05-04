@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../models/task_model.dart';
+import '../models/task_model.dart';
 import '../models/member_model.dart';
 import '../services/notification_service.dart';
 
@@ -15,9 +15,12 @@ class TaskProvider extends ChangeNotifier {
 
   List<Task> get tasks => _tasks;
 
+  /// Soma a carga mental total da família — esforço visível + 0.5 ×
+  /// subtarefas invisíveis (trabalho-iceberg). Arredondado pra int.
   int get totalMentalLoad {
     if (_tasks.isEmpty) return 0;
-    return _tasks.fold(0, (sum, item) => sum + item.effort);
+    final raw = _tasks.fold<double>(0, (sum, item) => sum + item.totalEffort);
+    return raw.round();
   }
 
   // ------------------------------------------------------------------ //
@@ -134,6 +137,7 @@ class TaskProvider extends ChangeNotifier {
     DateTime? scheduledTime,
     bool notifyAtTime = false,
     String? audioPath,
+    List<SubTask> hiddenSubtasks = const [],
   }) async {
     if (_familyId == null) return;
 
@@ -152,6 +156,7 @@ class TaskProvider extends ChangeNotifier {
       scheduledTime: scheduledTime,
       notifyAtTime: notifyAtTime,
       audioPath: audioPath,
+      hiddenSubtasks: hiddenSubtasks,
     );
 
     try {
@@ -217,6 +222,31 @@ class TaskProvider extends ChangeNotifier {
 
     await updateTask(updatedTask); // sem guard: qualquer um pode completar
     return isCompleting;
+  }
+
+  /// Marca/desmarca uma subtarefa invisível como concluída.
+  Future<void> toggleSubtask(String taskId, String subtaskId) async {
+    final task = _tasks.firstWhere(
+      (t) => t.id == taskId,
+      orElse: () => Task(
+        id: '',
+        title: '',
+        effort: 1,
+        frequency: TaskFrequency.semanal,
+        whoRemembers: '',
+        whoDecides: '',
+        whoExecutes: '',
+        createdAt: DateTime.now(),
+      ),
+    );
+    if (task.id.isEmpty) return;
+
+    final newSubs = task.hiddenSubtasks.map((s) {
+      if (s.id != subtaskId) return s;
+      return s.copyWith(completedAt: s.isDone ? null : DateTime.now());
+    }).toList();
+
+    await updateTask(task.copyWith(hiddenSubtasks: newSubs));
   }
 
   Future<void> reassignTask(String taskId, String newMemberId,

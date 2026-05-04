@@ -16,29 +16,48 @@ class NexoColors {
   static const Color indigoSoft = Color(0xFF7C86E8);
   static const Color indigoGlow = Color(0x265E6AD2); // 0.15
 
-  // ── Semantic ──────────────────────────────────────────────────────────────
+  // ── Semantic (3 tons cada) ────────────────────────────────────────────────
+  static const Color successLight = Color(0xFFDCFCE7);
   static const Color success = Color(0xFF16A34A);
+  static const Color successStrong = Color(0xFF15803D);
   static const Color successDark = Color(0xFF22C55E);
+
+  static const Color warningLight = Color(0xFFFEF3C7);
   static const Color warning = Color(0xFFD97706);
+  static const Color warningStrong = Color(0xFFB45309);
   static const Color warningDark = Color(0xFFF59E0B);
+
+  static const Color dangerLight = Color(0xFFFEE2E2);
   static const Color danger = Color(0xFFDC2626);
+  static const Color dangerStrong = Color(0xFFB91C1C);
   static const Color dangerDark = Color(0xFFEF4444);
 
-  // ── Light surfaces ────────────────────────────────────────────────────────
+  static const Color infoLight = Color(0xFFDBEAFE);
+  static const Color info = Color(0xFF2563EB);
+  static const Color infoStrong = Color(0xFF1D4ED8);
+  static const Color infoDark = Color(0xFF60A5FA);
+
+  // ── Light surfaces (3 camadas) ────────────────────────────────────────────
   static const Color lightBg = Color(0xFFFAFAFA);
   static const Color lightSurface = Color(0xFFFFFFFF);
+  static const Color lightSurfaceElevated = Color(0xFFFFFFFF);
   static const Color lightSurfaceMuted = Color(0xFFF5F5F7);
   static const Color lightBorder = Color(0xFFE8E8ED);
+  static const Color lightBorderStrong = Color(0xFFD1D1D6);
   static const Color lightFg = Color(0xFF0F0F12);
   static const Color lightFgMuted = Color(0xFF6B6B76);
+  static const Color lightFgSubtle = Color(0xFF9CA0A8);
 
-  // ── Dark surfaces (Cinema) ────────────────────────────────────────────────
+  // ── Dark surfaces (Cinema, 3 camadas) ─────────────────────────────────────
   static const Color darkBg = Color(0xFF0A0A0C);
   static const Color darkSurface = Color(0xFF141417);
+  static const Color darkSurfaceElevated = Color(0xFF1C1C21);
   static const Color darkSurfaceMuted = Color(0xFF1C1C21);
   static const Color darkBorder = Color(0x14FFFFFF); // 0.08 white
+  static const Color darkBorderStrong = Color(0x29FFFFFF);
   static const Color darkFg = Color(0xFFEDEDEF);
   static const Color darkFgMuted = Color(0xFF8A8F98);
+  static const Color darkFgSubtle = Color(0xFF5C606A);
 
   // ── Curated member palette (8 tons) ───────────────────────────────────────
   static const List<Color> memberPalette = [

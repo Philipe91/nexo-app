@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nexo/core/providers/member_provider.dart';
 import 'package:nexo/core/providers/task_provider.dart';
 import 'package:nexo/core/models/member_model.dart';
-import 'package:nexo/models/task_model.dart';
+import 'package:nexo/core/models/task_model.dart';
 
 void main() {
   // Mock SharedPreferences

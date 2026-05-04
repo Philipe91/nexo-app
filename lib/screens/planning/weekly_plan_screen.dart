@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../core/providers/task_provider.dart';
-import '../../models/task_model.dart';
+import '../../core/models/task_model.dart';
 import '../../core/widgets/glass_card.dart';
 
 class WeeklyPlanScreen extends StatefulWidget {

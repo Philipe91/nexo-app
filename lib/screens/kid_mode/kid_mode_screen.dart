@@ -10,7 +10,7 @@ import '../../core/providers/task_provider.dart';
 import '../../core/providers/member_provider.dart';
 import '../../core/providers/bank_provider.dart'; // <--- Import Missing
 import '../../core/models/member_model.dart';
-import '../../models/task_model.dart';
+import '../../core/models/task_model.dart';
 import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/xp_progress_bar.dart';
 import '../../core/widgets/level_up_dialog.dart';
