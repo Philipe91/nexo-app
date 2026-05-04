@@ -113,6 +113,47 @@ class TaskProvider extends ChangeNotifier {
     return stats;
   }
 
+  /// Heatmap "quem lembra" — distribuição da carga de memória da casa.
+  /// Retorna `{memberName: {weekday: count}}` onde weekday vai de 1 (Seg)
+  /// a 7 (Dom) seguindo Dart's DateTime.weekday. Conta tarefas em que o
+  /// membro aparece como `whoRemembers`, ponderado por `effort`.
+  Map<String, Map<int, int>> memoryLoadDistribution() {
+    const dayCodeToWeekday = {
+      'Seg': 1,
+      'Ter': 2,
+      'Qua': 3,
+      'Qui': 4,
+      'Sex': 5,
+      'Sáb': 6,
+      'Dom': 7,
+    };
+
+    final result = <String, Map<int, int>>{};
+    for (final task in _tasks) {
+      final remembers = task.whoRemembers.trim();
+      if (remembers.isEmpty) continue;
+      final perDay = result.putIfAbsent(remembers, () => {});
+      if (task.days.isEmpty) {
+        // Tarefas pontuais/sazonais sem dias — distribui em "0" (sem dia).
+        perDay[0] = (perDay[0] ?? 0) + task.effort;
+        continue;
+      }
+      for (final d in task.days) {
+        final wd = dayCodeToWeekday[d];
+        if (wd == null) continue;
+        perDay[wd] = (perDay[wd] ?? 0) + task.effort;
+      }
+    }
+    return result;
+  }
+
+  /// Carga total de "lembrar" por membro (soma da matriz acima).
+  Map<String, int> memoryLoadTotalByMember() {
+    final dist = memoryLoadDistribution();
+    return dist.map((name, perDay) =>
+        MapEntry(name, perDay.values.fold<int>(0, (a, b) => a + b)));
+  }
+
   int getMemberMentalLoad(String memberId) {
     final memberTasks = _tasks.where((t) =>
         t.whoExecutes == memberId ||

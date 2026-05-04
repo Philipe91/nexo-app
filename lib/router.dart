@@ -18,6 +18,7 @@ import 'screens/shopping/shopping_list_screen.dart'; // <--- Import Novo
 import 'package:nexo/screens/stats/statistics_screen.dart'; 
 import 'screens/ai/nexo_assistant_screen.dart';
 import 'screens/stats/mental_load_history_screen.dart'; // <--- Import Adicionado // <--- Import Novo
+import 'screens/stats/memory_load_screen.dart';
 import 'screens/shopping/meal_planner_screen.dart'; // <--- Import Novo
 import 'screens/checkin/checkin_screen.dart'; // <--- Import Novo
 import 'screens/scaffold_with_navbar.dart'; // <--- Import Novo para Navbar
@@ -209,6 +210,11 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
         path: '/mental-load-history',
         pageBuilder: (context, state) => _buildPageWithAnimation(
           context: context, state: state, child: const MentalLoadHistoryScreen()),
+      ),
+      GoRoute(
+        path: '/memory-load',
+        pageBuilder: (context, state) => _buildPageWithAnimation(
+          context: context, state: state, child: const MemoryLoadScreen()),
       ),
       GoRoute(
         path: '/checkin',

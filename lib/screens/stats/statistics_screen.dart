@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/providers/task_provider.dart';
 import '../../core/providers/member_provider.dart';
+import '../../core/theme/tokens.dart';
+import '../../core/widgets/app_card.dart';
 import '../../core/widgets/glass_card.dart';
 
 class StatisticsScreen extends StatelessWidget {
@@ -46,6 +50,47 @@ class StatisticsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // --- Memória da casa (Heatmap) ---
+            AppCard(
+              onTap: () => context.push('/memory-load'),
+              padding: const EdgeInsets.all(NexoSpace.lg),
+              glow: NexoColors.indigo,
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: NexoColors.indigo.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(NexoRadius.sm),
+                      border: Border.all(color: NexoColors.indigo.withOpacity(0.20)),
+                    ),
+                    child: const Icon(LucideIcons.brainCircuit,
+                        color: NexoColors.indigo, size: 22),
+                  ),
+                  const SizedBox(width: NexoSpace.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Memória da casa',
+                            style: GoogleFonts.fredoka(
+                                fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Quem mais carrega o peso de lembrar.',
+                          style: TextStyle(
+                              fontSize: NexoText.sm, color: Colors.grey.shade600),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(LucideIcons.chevronRight, color: Colors.grey, size: 20),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
             // --- Destaque da Semana ---
             if (maxScore > 0) ...[
               const Text("🏆 Destaque da Semana", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
